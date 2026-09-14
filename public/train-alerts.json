@@ -1,0 +1,16 @@
+{
+  "alerts": [
+    {
+      "id": "2026-09-15 00:01:00-0",
+      "content": "14/09/2026 23:39-Bus services 804, 807 and 860 are diverted due to an accident along Yishun Ring Road, at the junction with Yishun Avenue 11 (towards Yishun Street 41).",
+      "timestamp": "2026-09-15 00:01:00"
+    },
+    {
+      "id": "2026-04-18 11:50:27-1",
+      "content": "05:00-SK-Planned Service Adjustment. From 19 Apr to 18 Oct 2026, the Sengkang West LRT Inner Loop (i.e. direction of STC Sengkang towards SW1 Cheng Lim) will be closed. Commuters can continue to use the Sengkang West LRT Outer Loop (i.e. direction of STC Sengkang towards SW8 Renjong), peak-hours shuttle bus services, or regular bus services.",
+      "timestamp": "2026-04-18 11:50:27"
+    }
+  ],
+  "source": "TrainServiceAlerts",
+  "fetchedAt": "2026-09-14T16:10:57.474Z"
+}
