@@ -21,10 +21,12 @@ function exposedMinutes(route) {
 }
 
 function isAffectedByDisruption(route, disruptions) {
-  const affectedStationNames = disruptions.trainAlerts.flatMap(
-    (alert) => alert.affectedStations || [],
-  )
-  const affectedLines = new Set(disruptions.trainAlerts.map((alert) => alert.line))
+  // "Alert" is an informational/crowding notice, not a service impact — only
+  // "Disruption" should mark a route as affected and add the time penalty.
+  // Crowding notices already feed the ranking through routeCrowdScore.
+  const disruptive = disruptions.trainAlerts.filter((alert) => alert.status === 'Disruption')
+  const affectedStationNames = disruptive.flatMap((alert) => alert.affectedStations || [])
+  const affectedLines = new Set(disruptive.map((alert) => alert.line))
 
   // Station names in alerts (e.g. "Sengkang") are short forms; leg station
   // names are fuller labels (e.g. "Sengkang MRT/LRT"), so match by substring
