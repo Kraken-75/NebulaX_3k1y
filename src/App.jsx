@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import './App.css'
 import HomePage from './pages/HomePage'
-import PlannerPage from './pages/PlannerPage'
-import AnnouncementsPage from './pages/AnnouncementsPage'
 import RewardsPage from './pages/RewardsPage'
+import SignupPage from './pages/SignupPage'
 import BottomNav from './components/BottomNav'
+import { useHomeWork } from './hooks/useHomeWork'
 
 function App() {
   const [activePage, setActivePage] = useState('home')
   const [urgency, setUrgency] = useState(() => localStorage.getItem('nebulax:urgency') || 'chill')
+  const { homeWork, save: saveHomeWork } = useHomeWork()
 
   function handleUrgencyChange(next) {
     setUrgency(next)
@@ -17,6 +18,10 @@ function App() {
     } catch {
       // Non-critical — just means the toggle won't persist across visits.
     }
+  }
+
+  if (!homeWork) {
+    return <SignupPage onComplete={saveHomeWork} />
   }
 
   return (
@@ -33,12 +38,8 @@ function App() {
 
       <main className="content">
         {activePage === 'home' && (
-          <HomePage urgency={urgency} onNavigateToPlanner={() => setActivePage('planner')} />
+          <HomePage urgency={urgency} onUrgencyChange={handleUrgencyChange} homeWork={homeWork} />
         )}
-        {activePage === 'planner' && (
-          <PlannerPage urgency={urgency} onUrgencyChange={handleUrgencyChange} />
-        )}
-        {activePage === 'announcements' && <AnnouncementsPage />}
         {activePage === 'rewards' && <RewardsPage />}
       </main>
 

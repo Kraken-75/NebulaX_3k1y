@@ -4,7 +4,7 @@ import { rankRoutes } from '../services/rankingEngine.js'
 import { getPlatformCrowding, getTrainServiceAlerts } from '../services/ltaClient.js'
 import { getWeather } from '../services/weatherClient.js'
 import { getWalkCycleRoute } from '../services/osrmClient.js'
-import { MOCK_JOURNEYS } from '../data/mockJourneys.js'
+import { MOCK_JOURNEYS, ASK_ME_ALT_JOURNEY } from '../data/mockJourneys.js'
 import { MOCK_CROWDING, DEMO_TRIGGER_CROWDING } from '../data/mockCrowding.js'
 import { MOCK_DISRUPTIONS, DEMO_TRIGGER_DISRUPTIONS } from '../data/mockDisruptions.js'
 import { MOCK_WEATHER } from '../data/mockWeather.js'
@@ -19,9 +19,9 @@ const router = Router()
 // working call once ONEMAP_EMAIL/PASSWORD are set — swap it in here to
 // replace getJourneys() below without touching the ranking engine or API
 // shape. This keeps the fallback path honest instead of pretending.
-async function getJourneys() {
+async function getJourneys(source) {
   const routes = await Promise.all(
-    MOCK_JOURNEYS.routes.map(async (route) => ({
+    source.routes.map(async (route) => ({
       ...route,
       legs: await Promise.all(
         route.legs.map(async (leg) => {
@@ -48,8 +48,11 @@ router.get(
   asyncHandler(async (req, res) => {
     const urgency = req.query.urgency === 'rushing' ? 'rushing' : 'chill'
     const demoTriggered = isDemoDisruptionActive()
+    // "Ask Me" same-day override: ?dest=today swaps in the one-off alternate
+    // destination fixture instead of Arjun's usual work-station corridor.
+    const usingAltDestination = req.query.dest === 'today'
 
-    const journeyData = await getJourneys()
+    const journeyData = await getJourneys(usingAltDestination ? ASK_ME_ALT_JOURNEY : MOCK_JOURNEYS)
 
     let crowding
     let disruptions
@@ -79,6 +82,7 @@ router.get(
     res.json({
       demoMode: journeyData.isMock || crowding.isMock || disruptions.isMock || weather.isMock,
       demoTriggered,
+      usingAltDestination,
       urgency,
       weather,
       disruptions: disruptions.trainAlerts,

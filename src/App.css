@@ -60,67 +60,6 @@
   gap: 16px;
 }
 
-/* --- Home --- */
-.hero-card {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: white;
-  border-radius: 20px;
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.hero-card h1 {
-  color: white;
-  font-size: 26px;
-}
-
-.hero-card .eyebrow {
-  margin: 0;
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #cbd8fb;
-}
-
-.hero-copy {
-  color: #e2e8f0;
-  font-size: 15px;
-}
-
-.primary-button {
-  background: white;
-  color: var(--primary-dark);
-  border: none;
-  border-radius: 999px;
-  padding: 14px 20px;
-  font-weight: 700;
-  font-size: 16px;
-  cursor: pointer;
-  align-self: flex-start;
-}
-
-.card-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.info-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.info-card.accent {
-  border-color: var(--primary);
-  background: var(--primary-bg);
-}
-
 .card-label,
 .label,
 .eyebrow {
@@ -132,13 +71,41 @@
   color: var(--text-muted);
 }
 
-.home-footnote {
-  font-size: 13px;
-  color: var(--text-muted);
-  padding: 12px 4px;
+.primary-button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-/* --- Section heading (planner/announcements/rewards) --- */
+/* --- Home top bar: urgency + Ask Me --- */
+.home-topbar {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.home-topbar .urgency-toggle {
+  flex: 1;
+}
+
+.ask-me-button {
+  border: 2px solid var(--primary);
+  color: var(--primary-dark);
+  background: var(--primary-bg);
+  border-radius: 14px;
+  padding: 0 16px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* --- Section heading (rewards) --- */
 .section-heading {
   display: flex;
   align-items: flex-start;
@@ -303,6 +270,12 @@
   font-size: 12px;
 }
 
+.leg-chip-affected {
+  border-color: var(--affected);
+  color: var(--affected);
+  font-weight: 700;
+}
+
 .crowding-line {
   font-size: 13px;
   font-weight: 700;
@@ -410,67 +383,6 @@
   cursor: pointer;
 }
 
-/* --- Announcements --- */
-.announcement-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.announcement-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.announcement-topline {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tag {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--primary-bg);
-  color: var(--primary-dark);
-}
-
-.tag-disruption {
-  background: var(--affected-bg);
-  color: var(--affected);
-}
-
-.tag-alert {
-  background: #fffbeb;
-  color: #92400e;
-}
-
-.tag-reward {
-  background: linear-gradient(135deg, var(--reward-a), var(--reward-b));
-  color: white;
-}
-
-.time {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 32px 16px;
-  color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
 /* --- Rewards --- */
 .mock-disclaimer {
   font-size: 12px;
@@ -507,7 +419,7 @@
   width: 100%;
   max-width: 480px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   background: var(--surface);
   border-top: 1px solid var(--border);
   padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
@@ -536,4 +448,242 @@
 
 .bottom-nav-icon {
   font-size: 20px;
+}
+
+/* --- Map legend --- */
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.map-legend-swatch {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* --- Simulated phone notification --- */
+.phone-notification {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  background: rgba(15, 23, 42, 0.92);
+  color: white;
+  border: none;
+  border-radius: 18px;
+  padding: 16px;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+}
+
+.phone-notification-icon {
+  font-size: 24px;
+}
+
+.phone-notification-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.phone-notification-app {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.phone-notification-line {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.phone-notification-action {
+  font-weight: 700;
+  color: #7dd3fc;
+}
+
+/* --- Ask Me sheet --- */
+.ask-me-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+}
+
+.ask-me-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ask-me-option {
+  border: 2px solid var(--border);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ask-me-option.active {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+  color: var(--primary-dark);
+}
+
+.ask-me-cancel {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  padding: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* --- Signup --- */
+.signup-page {
+  padding: 32px 20px;
+  justify-content: center;
+  min-height: 100svh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.signup-hero h1 {
+  font-size: 26px;
+  margin-top: 6px;
+}
+
+.signup-step h2 {
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.signup-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.signup-option {
+  border: 2px solid var(--border);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.signup-option:hover {
+  border-color: var(--primary);
+}
+
+.signup-back {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  padding: 10px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+/* --- Rewards: progress bar + vouchers --- */
+.progress-track {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  margin: 14px 0 8px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.progress-caption {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.voucher-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.voucher-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  opacity: 0.6;
+}
+
+.voucher-card.voucher-unlocked {
+  opacity: 1;
+  border-color: var(--reward-a);
+}
+
+.voucher-threshold {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.voucher-redeem-button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 700;
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.voucher-card.voucher-unlocked .voucher-redeem-button {
+  background: linear-gradient(135deg, var(--reward-a), var(--reward-b));
+  color: white;
+}
+
+.voucher-redeem-button:disabled {
+  cursor: default;
 }

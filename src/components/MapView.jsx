@@ -1,12 +1,9 @@
-import { useEffect, useMemo } from 'react'
+import { Fragment, useEffect, useMemo } from 'react'
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import { legColor } from '../lib/lineColors'
 
-const ROUTE_COLORS = {
-  clear: '#0f766e',
-  affected: '#dc2626',
-  dimmed: '#94a3b8',
-}
+const DIMMED = '#cbd5e1'
 
 function FitToRoutes({ allPoints }) {
   const map = useMap()
@@ -18,14 +15,34 @@ function FitToRoutes({ allPoints }) {
   return null
 }
 
+function legLabel(leg) {
+  return leg.line || (leg.mode === 'walk' ? 'Walk' : leg.mode === 'bus' ? 'Bus' : leg.mode)
+}
+
 // Mandatory geospatial base: OpenStreetMap tiles with required attribution.
 // Uses the public OSM demo tile server for local/hackathon-demo traffic only
 // — a production deployment must switch to MapTiler/Stadia (see README).
-function MapView({ routes, focusedRouteId }) {
+//
+// Each leg of the focused route is colored by its actual line/mode (real SG
+// rail-line colors, distinct bus/walk colors) instead of one flat line, so
+// the route reads visually — a disrupted leg gets a red dashed outline on
+// top of its normal color rather than losing its identity.
+function MapView({ routes, focusedRouteId, liveLocation }) {
   const allPoints = useMemo(
     () => routes.flatMap((route) => route.legs.flatMap((leg) => leg.geometry)),
     [routes],
   )
+
+  const focusedRoute = routes.find((route) => route.id === focusedRouteId)
+  const legend = useMemo(() => {
+    if (!focusedRoute) return []
+    const seen = new Map()
+    for (const leg of focusedRoute.legs) {
+      const label = legLabel(leg)
+      if (!seen.has(label)) seen.set(label, legColor(leg))
+    }
+    return [...seen.entries()]
+  }, [focusedRoute])
 
   if (allPoints.length === 0) {
     return <div className="map-empty">Map will appear once a route is planned.</div>
@@ -39,22 +56,40 @@ function MapView({ routes, focusedRouteId }) {
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitToRoutes allPoints={allPoints} />
-        {routes.map((route) => {
-          const isFocused = route.id === focusedRouteId
-          return route.legs.map((leg, legIndex) => (
+
+        {routes
+          .filter((route) => route.id !== focusedRouteId)
+          .flatMap((route) =>
+            route.legs.map((leg, legIndex) => (
+              <Polyline
+                key={`dim-${route.id}-${legIndex}`}
+                positions={leg.geometry}
+                pathOptions={{ color: DIMMED, weight: 3, opacity: 0.6 }}
+              />
+            )),
+          )}
+
+        {focusedRoute?.legs.map((leg, legIndex) => (
+          <Fragment key={`focused-${legIndex}`}>
+            {leg.affected && (
+              <Polyline
+                positions={leg.geometry}
+                pathOptions={{ color: '#dc2626', weight: 9, opacity: 0.55, dashArray: '1 10' }}
+              />
+            )}
             <Polyline
-              key={`${route.id}-${legIndex}`}
               positions={leg.geometry}
               pathOptions={{
-                color: !isFocused ? ROUTE_COLORS.dimmed : route.affected ? ROUTE_COLORS.affected : ROUTE_COLORS.clear,
-                weight: isFocused ? 5 : 2,
-                opacity: isFocused ? 0.9 : 0.4,
-                dashArray: isFocused && route.affected ? '2 8' : undefined,
+                color: legColor(leg),
+                weight: leg.mode === 'walk' ? 4 : 6,
+                opacity: 0.95,
+                dashArray: leg.mode === 'walk' ? '2 8' : undefined,
               }}
             />
-          ))
-        })}
-        {routes.find((route) => route.id === focusedRouteId)?.legs.map((leg, index, legs) => {
+          </Fragment>
+        ))}
+
+        {focusedRoute?.legs.map((leg, index, legs) => {
           if (index !== 0 && index !== legs.length - 1) return null
           const point = index === 0 ? leg.geometry[0] : leg.geometry[leg.geometry.length - 1]
           const label = index === 0 ? leg.from.name : leg.to.name
@@ -64,7 +99,28 @@ function MapView({ routes, focusedRouteId }) {
             </CircleMarker>
           )
         })}
+
+        {liveLocation && (
+          <CircleMarker
+            center={[liveLocation.lat, liveLocation.lng]}
+            radius={8}
+            pathOptions={{ color: '#2563eb', fillColor: '#60a5fa', fillOpacity: 1, weight: 3 }}
+          >
+            <Popup>{liveLocation.isSimulated ? 'Your location (simulated for demo)' : 'Your location'}</Popup>
+          </CircleMarker>
+        )}
       </MapContainer>
+
+      {legend.length > 0 && (
+        <div className="map-legend">
+          {legend.map(([label, color]) => (
+            <span key={label} className="map-legend-item">
+              <span className="map-legend-swatch" style={{ background: color }} />
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

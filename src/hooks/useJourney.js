@@ -1,20 +1,22 @@
 import { useEffect, useState } from 'react'
 import { getJourney } from '../lib/api'
 
-const CACHE_KEY = 'nebulax:lastJourney'
+function cacheKey(altDestination) {
+  return `nebulax:lastJourney:${altDestination ? 'today' : 'main'}`
+}
 
-function readCache() {
+function readCache(altDestination) {
   try {
-    const raw = localStorage.getItem(CACHE_KEY)
+    const raw = localStorage.getItem(cacheKey(altDestination))
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
   }
 }
 
-function writeCache(data) {
+function writeCache(altDestination, data) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+    localStorage.setItem(cacheKey(altDestination), JSON.stringify(data))
   } catch {
     // Storage can be unavailable (private browsing, quota) — caching is a
     // convenience, never something the app depends on to function.
@@ -23,8 +25,10 @@ function writeCache(data) {
 
 // Handles the "underground = no signal" case: if a fresh fetch fails, fall
 // back to the last successful response instead of showing a dead screen.
-export function useJourney(urgency) {
-  const [data, setData] = useState(() => readCache())
+// The "Ask Me" today-only override is cached separately from Arjun's usual
+// commute so a network hiccup while toggling it doesn't show the wrong trip.
+export function useJourney(urgency, { altDestination = false } = {}) {
+  const [data, setData] = useState(() => readCache(altDestination))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [usingCache, setUsingCache] = useState(false)
@@ -34,17 +38,17 @@ export function useJourney(urgency) {
     let cancelled = false
     setLoading(true) // eslint-disable-line react-hooks/set-state-in-effect -- legitimate loading flag for this fetch, not a derivable value
 
-    getJourney(urgency)
+    getJourney(urgency, { altDestination })
       .then((fresh) => {
         if (cancelled) return
         setData(fresh)
         setUsingCache(false)
         setError('')
-        writeCache(fresh)
+        writeCache(altDestination, fresh)
       })
       .catch(() => {
         if (cancelled) return
-        const cached = readCache()
+        const cached = readCache(altDestination)
         if (cached) {
           setData(cached)
           setUsingCache(true)
@@ -60,7 +64,7 @@ export function useJourney(urgency) {
     return () => {
       cancelled = true
     }
-  }, [urgency, reloadKey])
+  }, [urgency, altDestination, reloadKey])
 
   return { data, loading, error, usingCache, reload: () => setReloadKey((key) => key + 1) }
 }

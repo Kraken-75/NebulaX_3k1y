@@ -1,7 +1,8 @@
+// Cut to 2 destinations on purpose — everything else (planning, alerts,
+// incentives) now lives inside Home's own flow instead of separate tabs,
+// per the "make it as simple as possible" feedback.
 const TABS = [
   { id: 'home', label: 'Home', icon: '🏠' },
-  { id: 'planner', label: 'Plan', icon: '🧭' },
-  { id: 'announcements', label: 'Alerts', icon: '📣' },
   { id: 'rewards', label: 'Rewards', icon: '🎁' },
 ]
 
