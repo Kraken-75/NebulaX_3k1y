@@ -9,7 +9,7 @@ a scaled reward for choosing a less-crowded alternative when it helps spread loa
 route.
 
 See [`docs/WRITEUP.md`](docs/WRITEUP.md) for the persona rationale, architecture, assumptions,
-limitations and measurement methodology. See `docs/AUDIT*.md` (v1 through v4) and
+limitations and measurement methodology. See `docs/AUDIT*.md` (v1 through v5) and
 [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this build decided what to keep across each
 revision and the order it was built in.
 
@@ -49,12 +49,18 @@ you want to record a demo. On first run, search and pick a home and work station
 From/To fields default to Punggol → one-north (Arjun's persona, and the only pair with the full
 hand-crafted disruption scenario — any other pair still produces a route, just a generically
 mocked one). Expand **"Simulate a disruption (for demo)"** and press **Trigger disruption** for a
-deterministic, reproducible scenario: a North East Line fault between Sengkang and Dhoby Ghaut, a
-bridging bus service declared, and a phone-style notification drops in from the top of the screen
-— tap it to reveal the ranked 3-route comparison (including the bridging bus as a real candidate),
-each alternative scaled to its own reward (the less convenient one pays more), plus a "Community
-updates" feed styled on the SGMRT Telegram channel (entirely synthetic, generated locally). Press
-**Reset** to clear it. This state is in-memory on the backend and resets when the server restarts.
+deterministic, reproducible scenario, picked at random from 3 (never the one already showing, so
+repeated triggers always visibly change something): a North East Line fault between Sengkang and
+Dhoby Ghaut, an East West Line fault between Clementi and Redhill, or a North South Line fault
+between Orchard and Raffles Place. Only the North East Line scenario touches Arjun's own
+Punggol → one-north corridor — when it's active, a bridging bus service is declared, a phone-style
+notification drops in from the top of the screen (tap it to reveal the ranked 3-route comparison
+including the bridging bus as a real candidate, each alternative scaled to its own reward), plus a
+"Community updates" feed styled on the SGMRT Telegram channel (entirely synthetic, generated
+locally). The other two scenarios still show the notification, correctly telling Arjun it doesn't
+affect his trip — pick a From/To pair that actually crosses the affected line (e.g. Orchard →
+Raffles Place) to see that scenario's own route impact instead. Press **Reset** to clear it. This
+state is in-memory on the backend and resets when the server restarts.
 
 ## Map tiles
 

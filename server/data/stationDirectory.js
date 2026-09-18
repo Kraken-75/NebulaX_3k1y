@@ -4,7 +4,10 @@
 // coordinates from general geography — precise enough for demo map
 // rendering, not surveyed. `line` is each station's primary/first-tagged
 // line, used to label the generated route's main transit leg; interchanges
-// just pick one (listed once, not once per line they serve).
+// are listed once (not once per line) but carry a `lines` array naming
+// every line they actually serve — server/services/mockRouteGenerator.js
+// uses this to route a cross-line trip through its real transfer station
+// instead of an arbitrary geometric midpoint.
 //
 // Scope note: covers every named MRT station across all lines. The 3 LRT
 // loops' own minor stops (e.g. individual Punggol/Sengkang/Bukit Panjang
@@ -14,31 +17,31 @@
 // them wasn't worth the accuracy risk.
 export const STATION_DIRECTORY = [
   // North South Line
-  { id: 'jurongEast', name: 'Jurong East', lat: 1.3329, lng: 103.7436, line: 'North South Line' },
+  { id: 'jurongEast', name: 'Jurong East', lat: 1.3329, lng: 103.7436, line: 'North South Line', lines: ['North South Line', 'East West Line'] },
   { id: 'bukitBatok', name: 'Bukit Batok', lat: 1.3489, lng: 103.7496, line: 'North South Line' },
   { id: 'bukitGombak', name: 'Bukit Gombak', lat: 1.3588, lng: 103.7517, line: 'North South Line' },
   { id: 'choaChuKang', name: 'Choa Chu Kang', lat: 1.3854, lng: 103.7443, line: 'North South Line' },
   { id: 'yewTee', name: 'Yew Tee', lat: 1.3971, lng: 103.7474, line: 'North South Line' },
   { id: 'kranji', name: 'Kranji', lat: 1.4252, lng: 103.7621, line: 'North South Line' },
   { id: 'marsiling', name: 'Marsiling', lat: 1.4327, lng: 103.7742, line: 'North South Line' },
-  { id: 'woodlands', name: 'Woodlands', lat: 1.437, lng: 103.7864, line: 'North South Line' },
+  { id: 'woodlands', name: 'Woodlands', lat: 1.437, lng: 103.7864, line: 'North South Line', lines: ['North South Line', 'Thomson-East Coast Line'] },
   { id: 'admiralty', name: 'Admiralty', lat: 1.4406, lng: 103.8009, line: 'North South Line' },
   { id: 'sembawang', name: 'Sembawang', lat: 1.4491, lng: 103.8201, line: 'North South Line' },
   { id: 'yishun', name: 'Yishun', lat: 1.4295, lng: 103.8353, line: 'North South Line' },
   { id: 'khatib', name: 'Khatib', lat: 1.4173, lng: 103.833, line: 'North South Line' },
   { id: 'yioChuKang', name: 'Yio Chu Kang', lat: 1.3818, lng: 103.8449, line: 'North South Line' },
   { id: 'angMoKio', name: 'Ang Mo Kio', lat: 1.3699, lng: 103.8496, line: 'North South Line' },
-  { id: 'bishan', name: 'Bishan', lat: 1.3506, lng: 103.8485, line: 'North South Line' },
+  { id: 'bishan', name: 'Bishan', lat: 1.3506, lng: 103.8485, line: 'North South Line', lines: ['North South Line', 'Circle Line'] },
   { id: 'braddell', name: 'Braddell', lat: 1.3403, lng: 103.8467, line: 'North South Line' },
   { id: 'toaPayoh', name: 'Toa Payoh', lat: 1.3328, lng: 103.8474, line: 'North South Line' },
   { id: 'novena', name: 'Novena', lat: 1.3203, lng: 103.8438, line: 'North South Line' },
-  { id: 'newton', name: 'Newton', lat: 1.3127, lng: 103.8382, line: 'North South Line' },
-  { id: 'orchard', name: 'Orchard', lat: 1.3041, lng: 103.8318, line: 'North South Line' },
+  { id: 'newton', name: 'Newton', lat: 1.3127, lng: 103.8382, line: 'North South Line', lines: ['North South Line', 'Downtown Line'] },
+  { id: 'orchard', name: 'Orchard', lat: 1.3041, lng: 103.8318, line: 'North South Line', lines: ['North South Line', 'Thomson-East Coast Line'] },
   { id: 'somerset', name: 'Somerset', lat: 1.3005, lng: 103.8386, line: 'North South Line' },
-  { id: 'dhobyGhaut', name: 'Dhoby Ghaut', lat: 1.2986, lng: 103.8455, line: 'North South Line' },
-  { id: 'cityHall', name: 'City Hall', lat: 1.2931, lng: 103.852, line: 'North South Line' },
-  { id: 'rafflesPlace', name: 'Raffles Place', lat: 1.284, lng: 103.8515, line: 'North South Line' },
-  { id: 'marinaBay', name: 'Marina Bay', lat: 1.276, lng: 103.8546, line: 'North South Line' },
+  { id: 'dhobyGhaut', name: 'Dhoby Ghaut', lat: 1.2986, lng: 103.8455, line: 'North South Line', lines: ['North South Line', 'North East Line', 'Circle Line'] },
+  { id: 'cityHall', name: 'City Hall', lat: 1.2931, lng: 103.852, line: 'North South Line', lines: ['North South Line', 'East West Line'] },
+  { id: 'rafflesPlace', name: 'Raffles Place', lat: 1.284, lng: 103.8515, line: 'North South Line', lines: ['North South Line', 'East West Line'] },
+  { id: 'marinaBay', name: 'Marina Bay', lat: 1.276, lng: 103.8546, line: 'North South Line', lines: ['North South Line', 'Circle Line', 'Thomson-East Coast Line'] },
   { id: 'marinaSouthPier', name: 'Marina South Pier', lat: 1.2708, lng: 103.863, line: 'North South Line' },
 
   // East West Line
@@ -49,18 +52,18 @@ export const STATION_DIRECTORY = [
   { id: 'bedok', name: 'Bedok', lat: 1.324, lng: 103.9301, line: 'East West Line' },
   { id: 'kembangan', name: 'Kembangan', lat: 1.3208, lng: 103.9127, line: 'East West Line' },
   { id: 'eunos', name: 'Eunos', lat: 1.3197, lng: 103.9032, line: 'East West Line' },
-  { id: 'payaLebar', name: 'Paya Lebar', lat: 1.3177, lng: 103.8926, line: 'East West Line' },
+  { id: 'payaLebar', name: 'Paya Lebar', lat: 1.3177, lng: 103.8926, line: 'East West Line', lines: ['East West Line', 'Circle Line'] },
   { id: 'aljunied', name: 'Aljunied', lat: 1.3164, lng: 103.8827, line: 'East West Line' },
   { id: 'kallang', name: 'Kallang', lat: 1.3116, lng: 103.8713, line: 'East West Line' },
   { id: 'lavender', name: 'Lavender', lat: 1.3072, lng: 103.8631, line: 'East West Line' },
-  { id: 'bugis', name: 'Bugis', lat: 1.3006, lng: 103.8559, line: 'East West Line' },
+  { id: 'bugis', name: 'Bugis', lat: 1.3006, lng: 103.8559, line: 'East West Line', lines: ['East West Line', 'Downtown Line'] },
   { id: 'tanjongPagar', name: 'Tanjong Pagar', lat: 1.2765, lng: 103.8459, line: 'East West Line' },
-  { id: 'outramPark', name: 'Outram Park', lat: 1.2802, lng: 103.8395, line: 'East West Line' },
+  { id: 'outramPark', name: 'Outram Park', lat: 1.2802, lng: 103.8395, line: 'East West Line', lines: ['East West Line', 'North East Line', 'Thomson-East Coast Line'] },
   { id: 'tiongBahru', name: 'Tiong Bahru', lat: 1.2862, lng: 103.827, line: 'East West Line' },
   { id: 'redhill', name: 'Redhill', lat: 1.2896, lng: 103.8168, line: 'East West Line' },
   { id: 'queenstown', name: 'Queenstown', lat: 1.2944, lng: 103.8058, line: 'East West Line' },
   { id: 'commonwealth', name: 'Commonwealth', lat: 1.3023, lng: 103.7982, line: 'East West Line' },
-  { id: 'buonaVista', name: 'Buona Vista', lat: 1.3067, lng: 103.79, line: 'East West Line' },
+  { id: 'buonaVista', name: 'Buona Vista', lat: 1.3067, lng: 103.79, line: 'East West Line', lines: ['East West Line', 'Circle Line'] },
   { id: 'dover', name: 'Dover', lat: 1.3113, lng: 103.7786, line: 'East West Line' },
   { id: 'clementi', name: 'Clementi', lat: 1.3151, lng: 103.7654, line: 'East West Line' },
   { id: 'chineseGarden', name: 'Chinese Garden', lat: 1.3423, lng: 103.7327, line: 'East West Line' },
@@ -73,18 +76,18 @@ export const STATION_DIRECTORY = [
   { id: 'tuasWestRoad', name: 'Tuas West Road', lat: 1.3299, lng: 103.6396, line: 'East West Line' },
   { id: 'tuasLink', name: 'Tuas Link', lat: 1.3404, lng: 103.6367, line: 'East West Line' },
   { id: 'changiAirport', name: 'Changi Airport', lat: 1.3572, lng: 103.988, line: 'East West Line' },
-  { id: 'expo', name: 'Expo', lat: 1.335, lng: 103.9614, line: 'East West Line' },
+  { id: 'expo', name: 'Expo', lat: 1.335, lng: 103.9614, line: 'East West Line', lines: ['East West Line', 'Downtown Line'] },
 
   // North East Line
-  { id: 'harbourfront', name: 'HarbourFront', lat: 1.2653, lng: 103.8218, line: 'North East Line' },
-  { id: 'chinatown', name: 'Chinatown', lat: 1.2846, lng: 103.844, line: 'North East Line' },
+  { id: 'harbourfront', name: 'HarbourFront', lat: 1.2653, lng: 103.8218, line: 'North East Line', lines: ['North East Line', 'Circle Line'] },
+  { id: 'chinatown', name: 'Chinatown', lat: 1.2846, lng: 103.844, line: 'North East Line', lines: ['North East Line', 'Downtown Line'] },
   { id: 'clarkeQuay', name: 'Clarke Quay', lat: 1.2884, lng: 103.8465, line: 'North East Line' },
-  { id: 'littleIndia', name: 'Little India', lat: 1.3066, lng: 103.8496, line: 'North East Line' },
+  { id: 'littleIndia', name: 'Little India', lat: 1.3066, lng: 103.8496, line: 'North East Line', lines: ['North East Line', 'Downtown Line'] },
   { id: 'farrerPark', name: 'Farrer Park', lat: 1.3125, lng: 103.8535, line: 'North East Line' },
   { id: 'boonKeng', name: 'Boon Keng', lat: 1.3195, lng: 103.8617, line: 'North East Line' },
   { id: 'potongPasir', name: 'Potong Pasir', lat: 1.3313, lng: 103.8686, line: 'North East Line' },
   { id: 'woodleigh', name: 'Woodleigh', lat: 1.3392, lng: 103.8707, line: 'North East Line' },
-  { id: 'serangoon', name: 'Serangoon', lat: 1.3499, lng: 103.873, line: 'North East Line' },
+  { id: 'serangoon', name: 'Serangoon', lat: 1.3499, lng: 103.873, line: 'North East Line', lines: ['North East Line', 'Circle Line'] },
   { id: 'kovan', name: 'Kovan', lat: 1.36, lng: 103.885, line: 'North East Line' },
   { id: 'hougang', name: 'Hougang', lat: 1.3712, lng: 103.8925, line: 'North East Line' },
   { id: 'buangkok', name: 'Buangkok', lat: 1.3829, lng: 103.8929, line: 'North East Line' },
@@ -94,18 +97,18 @@ export const STATION_DIRECTORY = [
   // Circle Line
   { id: 'brasBasah', name: 'Bras Basah', lat: 1.2969, lng: 103.8506, line: 'Circle Line' },
   { id: 'esplanade', name: 'Esplanade', lat: 1.2937, lng: 103.8555, line: 'Circle Line' },
-  { id: 'promenade', name: 'Promenade', lat: 1.2932, lng: 103.861, line: 'Circle Line' },
+  { id: 'promenade', name: 'Promenade', lat: 1.2932, lng: 103.861, line: 'Circle Line', lines: ['Circle Line', 'Downtown Line'] },
   { id: 'nicollHighway', name: 'Nicoll Highway', lat: 1.2999, lng: 103.8635, line: 'Circle Line' },
   { id: 'stadium', name: 'Stadium', lat: 1.3028, lng: 103.8752, line: 'Circle Line' },
   { id: 'mountbatten', name: 'Mountbatten', lat: 1.3061, lng: 103.8823, line: 'Circle Line' },
   { id: 'dakota', name: 'Dakota', lat: 1.3086, lng: 103.8886, line: 'Circle Line' },
-  { id: 'macpherson', name: 'MacPherson', lat: 1.3266, lng: 103.8895, line: 'Circle Line' },
+  { id: 'macpherson', name: 'MacPherson', lat: 1.3266, lng: 103.8895, line: 'Circle Line', lines: ['Circle Line', 'Downtown Line'] },
   { id: 'taiSeng', name: 'Tai Seng', lat: 1.3357, lng: 103.8884, line: 'Circle Line' },
   { id: 'bartley', name: 'Bartley', lat: 1.3428, lng: 103.8798, line: 'Circle Line' },
   { id: 'lorongChuan', name: 'Lorong Chuan', lat: 1.3517, lng: 103.8642, line: 'Circle Line' },
   { id: 'marymount', name: 'Marymount', lat: 1.3487, lng: 103.8393, line: 'Circle Line' },
-  { id: 'caldecott', name: 'Caldecott', lat: 1.3374, lng: 103.8397, line: 'Circle Line' },
-  { id: 'botanicGardens', name: 'Botanic Gardens', lat: 1.3223, lng: 103.8154, line: 'Circle Line' },
+  { id: 'caldecott', name: 'Caldecott', lat: 1.3374, lng: 103.8397, line: 'Circle Line', lines: ['Circle Line', 'Thomson-East Coast Line'] },
+  { id: 'botanicGardens', name: 'Botanic Gardens', lat: 1.3223, lng: 103.8154, line: 'Circle Line', lines: ['Circle Line', 'Downtown Line'] },
   { id: 'farrerRoad', name: 'Farrer Road', lat: 1.3175, lng: 103.8067, line: 'Circle Line' },
   { id: 'hollandVillage', name: 'Holland Village', lat: 1.3111, lng: 103.7963, line: 'Circle Line' },
   { id: 'oneNorth', name: 'one-north', lat: 1.2995, lng: 103.7876, line: 'Circle Line' },
@@ -114,7 +117,7 @@ export const STATION_DIRECTORY = [
   { id: 'pasirPanjang', name: 'Pasir Panjang', lat: 1.2762, lng: 103.7913, line: 'Circle Line' },
   { id: 'labradorPark', name: 'Labrador Park', lat: 1.2717, lng: 103.8027, line: 'Circle Line' },
   { id: 'telokBlangah', name: 'Telok Blangah', lat: 1.2706, lng: 103.8092, line: 'Circle Line' },
-  { id: 'bayfront', name: 'Bayfront', lat: 1.282, lng: 103.859, line: 'Circle Line' },
+  { id: 'bayfront', name: 'Bayfront', lat: 1.282, lng: 103.859, line: 'Circle Line', lines: ['Circle Line', 'Downtown Line'] },
 
   // Downtown Line
   { id: 'bukitPanjang', name: 'Bukit Panjang', lat: 1.3789, lng: 103.7622, line: 'Downtown Line' },
@@ -124,7 +127,7 @@ export const STATION_DIRECTORY = [
   { id: 'kingAlbertPark', name: 'King Albert Park', lat: 1.3355, lng: 103.7833, line: 'Downtown Line' },
   { id: 'sixthAvenue', name: 'Sixth Avenue', lat: 1.3307, lng: 103.7967, line: 'Downtown Line' },
   { id: 'tanKahKee', name: 'Tan Kah Kee', lat: 1.3259, lng: 103.8073, line: 'Downtown Line' },
-  { id: 'stevens', name: 'Stevens', lat: 1.3196, lng: 103.8258, line: 'Downtown Line' },
+  { id: 'stevens', name: 'Stevens', lat: 1.3196, lng: 103.8258, line: 'Downtown Line', lines: ['Downtown Line', 'Thomson-East Coast Line'] },
   { id: 'rochor', name: 'Rochor', lat: 1.3038, lng: 103.8526, line: 'Downtown Line' },
   { id: 'downtown', name: 'Downtown', lat: 1.2795, lng: 103.8527, line: 'Downtown Line' },
   { id: 'telokAyer', name: 'Telok Ayer', lat: 1.2822, lng: 103.8482, line: 'Downtown Line' },

@@ -1,10 +1,16 @@
 // Generates 3 plausible routes for ANY selected from/to station pair, not
 // just Arjun's hand-crafted Punggol -> one-north corridor
-// (server/data/mockJourneys.js). There's no real transit topology behind
-// this — no OneMap/routing engine credentials exist in this environment
-// (see docs/WRITEUP.md) — so this simulates a believable trip from straight-
-// line distance instead of pretending to know the real line-by-line path.
+// (server/data/mockJourneys.js). There's no real routing engine behind this
+// — no OneMap/routing credentials exist in this environment (see
+// docs/WRITEUP.md) — so travel times are simulated from straight-line
+// distance. The transfer point for a cross-line trip, though, is real: we
+// look up an actual station in STATION_DIRECTORY that serves both lines
+// (its `lines` array) instead of inventing a geometric midpoint, so the map
+// bends at the real interchange and the route detail sheet names it, for
+// any pair, not just the one this was first reported against.
 // Always still labeled demo/mock data; never presented as a real API result.
+
+import { STATION_DIRECTORY } from '../data/stationDirectory.js'
 
 const EARTH_RADIUS_KM = 6371
 
@@ -17,27 +23,47 @@ function haversineKm(a, b) {
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h))
 }
 
+function servesLine(station, line) {
+  return station.lines ? station.lines.includes(line) : station.line === line
+}
+
+// Real interchange lookup: any directory station tagged with both lines. If
+// several exist (e.g. more than one CCL/DTL interchange), pick the one that
+// minimizes total travel distance (from -> candidate -> to) so the "detour"
+// stays geographically sensible instead of picking an arbitrary match.
+function findInterchange(from, to) {
+  const candidates = STATION_DIRECTORY.filter(
+    (station) => servesLine(station, from.line) && servesLine(station, to.line),
+  )
+  if (candidates.length === 0) return null
+  return candidates.reduce((best, station) => {
+    const dist = haversineKm(from, station) + haversineKm(station, to)
+    const bestDist = haversineKm(from, best) + haversineKm(best, to)
+    return dist < bestDist ? station : best
+  })
+}
+
 function midpoint(a, b) {
   return { name: 'Interchange', lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2, line: null }
 }
 
-// When from/to are on different lines, this models a single transfer at the
-// geometric midpoint instead of one leg carrying a fake combined label like
-// "North East Line / North South Line" — that combined string could never
-// match a real line name anywhere else in the app (map coloring, disruption
-// detection), which is exactly the bug this fixes. There's no real
-// interchange-topology data behind this either — it's still a straight-line
-// simulation, just one that produces 2 real, individually-correct line
-// names instead of one fake compound one.
+// When from/to are on different lines, this models a transfer at a real
+// named interchange station (looked up above) instead of a fake combined
+// label like "North East Line / North South Line" — that combined string
+// could never match a real line name anywhere else in the app (map
+// coloring, disruption detection), which is the original bug this fixes.
+// Falls back to the old geometric midpoint only for the rare pair with no
+// tagged interchange in the directory, so a data gap degrades gracefully
+// instead of throwing.
 function transitLegs(from, to, minutes) {
   if (from.line === to.line) {
     return [{ mode: 'train', from, to, minutes, line: from.line }]
   }
-  const mid = midpoint(from, to)
+  const transfer = findInterchange(from, to) || midpoint(from, to)
   const firstHalf = Math.round(minutes / 2)
   return [
-    { mode: 'train', from, to: mid, minutes: firstHalf, line: from.line },
-    { mode: 'train', from: mid, to, minutes: minutes - firstHalf, line: to.line },
+    { mode: 'train', from, to: transfer, minutes: firstHalf, line: from.line },
+    { mode: 'train', from: transfer, to, minutes: minutes - firstHalf, line: to.line },
   ]
 }
 

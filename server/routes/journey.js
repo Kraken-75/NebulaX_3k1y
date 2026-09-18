@@ -9,10 +9,10 @@ import { generateGenericRoutes } from '../services/mockRouteGenerator.js'
 import { MOCK_JOURNEYS, BRIDGING_BUS_ROUTE } from '../data/mockJourneys.js'
 import { STATION_DIRECTORY } from '../data/stationDirectory.js'
 import { MOCK_CROWDING, DEMO_TRIGGER_CROWDING } from '../data/mockCrowding.js'
-import { MOCK_DISRUPTIONS, DEMO_TRIGGER_DISRUPTIONS } from '../data/mockDisruptions.js'
+import { MOCK_DISRUPTIONS } from '../data/mockDisruptions.js'
 import { MOCK_WEATHER } from '../data/mockWeather.js'
 import { MOCK_TELEGRAM_FEED } from '../data/mockTelegramFeed.js'
-import { isDemoDisruptionActive } from '../state/demoState.js'
+import { isDemoDisruptionActive, getActiveDemoScenario } from '../state/demoState.js'
 
 const router = Router()
 
@@ -81,7 +81,7 @@ router.get(
     let disruptions
     if (demoTriggered) {
       crowding = DEMO_TRIGGER_CROWDING
-      disruptions = DEMO_TRIGGER_DISRUPTIONS
+      disruptions = getActiveDemoScenario()
     } else {
       crowding = await getPlatformCrowding().catch(() => MOCK_CROWDING)
       try {
@@ -92,13 +92,22 @@ router.get(
       }
     }
 
-    const bridgingBusDeclared = disruptions.trainAlerts.some(
-      (alert) => alert.status === 'Disruption' && alert.bridgingBusDeclared,
+    // BRIDGING_BUS_ROUTE (mockJourneys.js) is a hand-built fixture for one
+    // specific line — the North East Line, since that's the line Arjun's own
+    // corridor crosses. With 3 possible demo scenarios now (see
+    // mockDisruptions.js), a bridgingBusDeclared flag alone isn't enough to
+    // add it: an East West or North South Line fault also declares a
+    // bridging bus, but this app has no route fixture for those, so adding
+    // "NEL Bridging Bus" as a candidate for an unrelated line's fault would
+    // be wrong. Scoped to the alert's own line matching the one fixture that
+    // actually exists.
+    const nelBridgingBusDeclared = disruptions.trainAlerts.some(
+      (alert) => alert.status === 'Disruption' && alert.bridgingBusDeclared && alert.line === 'North East Line',
     )
 
-    const journeyData = await getJourneys(fromId, toId, { includeBridgingBus: bridgingBusDeclared })
+    const journeyData = await getJourneys(fromId, toId, { includeBridgingBus: nelBridgingBusDeclared })
 
-    if (bridgingBusDeclared && journeyData.isArjunCorridor) {
+    if (nelBridgingBusDeclared && journeyData.isArjunCorridor) {
       // Priority 1: real v3/BusArrival Load field — will only succeed with
       // a real LTA key AND a real bus stop/service code, neither of which
       // exists for a temporary bridging service, so this realistically
@@ -127,9 +136,12 @@ router.get(
       weather,
       disruptions: disruptions.trainAlerts,
       // Secondary community-update signal (styled on the SGMRT Telegram
-      // channel, entirely synthetic — see mockTelegramFeed.js) only shown
-      // alongside an actual disruption on Arjun's modeled corridor.
-      communityUpdates: bridgingBusDeclared && journeyData.isArjunCorridor ? MOCK_TELEGRAM_FEED : [],
+      // channel, entirely synthetic — see mockTelegramFeed.js). Its content
+      // is itself written specifically about the NEL Sengkang-Dhoby Ghaut
+      // fault, so it's only shown for that same scenario on Arjun's modeled
+      // corridor — not for the East West/North South Line scenarios, which
+      // it doesn't describe.
+      communityUpdates: nelBridgingBusDeclared && journeyData.isArjunCorridor ? MOCK_TELEGRAM_FEED : [],
       routes: ranked,
     })
   }),

@@ -123,9 +123,10 @@ a real deployment, and a judge from transport operations would be right to push 
   (see Architecture above) — journeys are a labeled demo fixture with real street-level geometry
   layered on top for the walk/cycle legs.
 - **Generic-pair cross-line transfers**: for any pair not on Arjun's hand-crafted corridor, a
-  transfer between lines is modeled as a single synthetic midpoint labeled "Interchange" — not a
-  real named interchange station, since there's no real topology data behind the generic generator.
-  Honest about being a transfer, not honest about exactly where.
+  transfer between lines is modeled at a real named interchange station looked up from
+  `server/data/stationDirectory.js` (picking the geographically best one when more than one exists
+  for that line pair), not a synthetic midpoint — see `docs/AUDIT_V5.md`. Still simulated travel
+  time and straight-line leg geometry, not a real routing engine's path between stations.
 - **Route detail view (GMaps-style)**: computed board/alight clock times and estimated stop counts
   are arithmetic on the one real number available (leg duration) presented the way a transit app
   conventionally shows a trip, not real schedule/stop data (this app has no data source for either).

@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { getTrainServiceAlerts, getRoadWorks, getPlannedBusRoutes } from '../services/ltaClient.js'
-import { MOCK_DISRUPTIONS, DEMO_TRIGGER_DISRUPTIONS } from '../data/mockDisruptions.js'
-import { isDemoDisruptionActive } from '../state/demoState.js'
+import { MOCK_DISRUPTIONS } from '../data/mockDisruptions.js'
+import { isDemoDisruptionActive, getActiveDemoScenario } from '../state/demoState.js'
 
 const router = Router()
 
@@ -10,7 +10,7 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     if (isDemoDisruptionActive()) {
-      return res.json(DEMO_TRIGGER_DISRUPTIONS)
+      return res.json(getActiveDemoScenario())
     }
 
     try {
