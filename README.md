@@ -13,6 +13,12 @@ limitations and measurement methodology. See `docs/AUDIT*.md` (v1 through v6) an
 [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this build decided what to keep across each
 revision and the order it was built in.
 
+> **Picking this repo back up — human or AI agent (Claude Code, Codex, etc.):** this app is near
+> demo-ready after six rounds of real feedback and fixes. Read [`AGENTS.md`](AGENTS.md) first — it
+> has the full context, the design conventions to preserve, the real branch to work on
+> (`feature/ps2-complete-build`, not `main`), and explicit instructions not to restart or discard
+> the progress already made.
+
 ## Quick start (zero setup friction, zero API keys required)
 
 ```bash
