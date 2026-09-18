@@ -39,6 +39,13 @@ export function legColor(leg) {
 export function legCode(leg) {
   if (leg.mode === 'walk') return null
   if (leg.line && LINE_CODES[leg.line]) return LINE_CODES[leg.line]
-  if (leg.mode === 'bus' && leg.line) return leg.line.replace('Bus ', '')
+  if (leg.mode === 'bus' && leg.line) {
+    // Only ever show a real digit service number (e.g. "Bus 83" -> "83").
+    // A bus leg with no verified real service (see mockRouteGenerator.js)
+    // carries a descriptive, non-numeric line label instead of a fabricated
+    // number, so this falls through to the generic "BUS" badge for it.
+    const serviceNumber = leg.line.match(/\d+/)
+    return serviceNumber ? serviceNumber[0] : 'BUS'
+  }
   return leg.mode === 'train' ? 'MRT' : leg.mode.toUpperCase()
 }

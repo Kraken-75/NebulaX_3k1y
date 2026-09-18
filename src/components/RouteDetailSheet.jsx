@@ -112,7 +112,10 @@ function RouteDetailSheet({ route, from, to, onClose, onChoose, choosing }) {
                   {leg.affected && <span className="status-chip affected">Affected</span>}
                 </div>
                 <p className="timeline-meta">
-                  Ride ~{estimateStops(leg.minutes)} stop{estimateStops(leg.minutes) > 1 ? 's' : ''} ({leg.minutes} min)
+                  {(() => {
+                    const stops = leg.estimatedStops ?? estimateStops(leg.minutes)
+                    return `Ride ~${stops} stop${stops > 1 ? 's' : ''} (${leg.minutes} min)`
+                  })()}
                 </p>
                 <div className="timeline-row timeline-row-alight">
                   <p className="timeline-title">{leg.to.name}</p>
