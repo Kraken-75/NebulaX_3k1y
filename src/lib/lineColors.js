@@ -7,7 +7,19 @@ const LINE_COLORS = {
   'North South Line': '#D42E12',
   'East West Line': '#009645',
   'Downtown Line': '#005EC4',
+  'Thomson-East Coast Line': '#9D5B25',
   'Punggol LRT': '#748477',
+}
+
+// Short line-code badges, GMaps-style ("EW", "NE", ...).
+const LINE_CODES = {
+  'North East Line': 'NE',
+  'Circle Line': 'CC',
+  'North South Line': 'NS',
+  'East West Line': 'EW',
+  'Downtown Line': 'DT',
+  'Thomson-East Coast Line': 'TE',
+  'Punggol LRT': 'PG',
 }
 
 const MODE_COLORS = {
@@ -22,6 +34,11 @@ export function legColor(leg) {
   return MODE_COLORS[leg.mode] || '#334155'
 }
 
-export function legIsWalk(leg) {
-  return leg.mode === 'walk'
+// Short badge text for a leg — a real line's code, or the bus service
+// number, or null for walk (no badge).
+export function legCode(leg) {
+  if (leg.mode === 'walk') return null
+  if (leg.line && LINE_CODES[leg.line]) return LINE_CODES[leg.line]
+  if (leg.mode === 'bus' && leg.line) return leg.line.replace('Bus ', '')
+  return leg.mode === 'train' ? 'MRT' : leg.mode.toUpperCase()
 }

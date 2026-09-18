@@ -9,8 +9,7 @@ a scaled reward for choosing a less-crowded alternative when it helps spread loa
 route.
 
 See [`docs/WRITEUP.md`](docs/WRITEUP.md) for the persona rationale, architecture, assumptions,
-limitations and measurement methodology. See [`docs/AUDIT.md`](docs/AUDIT.md)/
-[`docs/AUDIT_V2.md`](docs/AUDIT_V2.md)/[`docs/AUDIT_V3.md`](docs/AUDIT_V3.md) and
+limitations and measurement methodology. See `docs/AUDIT*.md` (v1 through v4) and
 [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this build decided what to keep across each
 revision and the order it was built in.
 

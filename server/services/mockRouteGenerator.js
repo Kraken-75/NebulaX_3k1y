@@ -17,8 +17,28 @@ function haversineKm(a, b) {
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h))
 }
 
-function transitLabel(from, to) {
-  return from.line === to.line ? from.line : `${from.line} / ${to.line}`
+function midpoint(a, b) {
+  return { name: 'Interchange', lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2, line: null }
+}
+
+// When from/to are on different lines, this models a single transfer at the
+// geometric midpoint instead of one leg carrying a fake combined label like
+// "North East Line / North South Line" — that combined string could never
+// match a real line name anywhere else in the app (map coloring, disruption
+// detection), which is exactly the bug this fixes. There's no real
+// interchange-topology data behind this either — it's still a straight-line
+// simulation, just one that produces 2 real, individually-correct line
+// names instead of one fake compound one.
+function transitLegs(from, to, minutes) {
+  if (from.line === to.line) {
+    return [{ mode: 'train', from, to, minutes, line: from.line }]
+  }
+  const mid = midpoint(from, to)
+  const firstHalf = Math.round(minutes / 2)
+  return [
+    { mode: 'train', from, to: mid, minutes: firstHalf, line: from.line },
+    { mode: 'train', from: mid, to, minutes: minutes - firstHalf, line: to.line },
+  ]
 }
 
 // Every walk leg here stays comfortably under the 10-minute cap by
@@ -44,7 +64,7 @@ export function generateGenericRoutes(from, to) {
       uncertaintyMinutes: 5,
       legs: [
         { mode: 'walk', from, to: from, minutes: 5 },
-        { mode: 'train', from, to, minutes: trainMinutes, line: transitLabel(from, to) },
+        ...transitLegs(from, to, trainMinutes),
         { mode: 'walk', from: to, to, minutes: 4 },
       ],
     },
@@ -66,7 +86,7 @@ export function generateGenericRoutes(from, to) {
       uncertaintyMinutes: 7,
       legs: [
         { mode: 'walk', from, to: from, minutes: 5 },
-        { mode: 'train', from, to, minutes: altTrainMinutes, line: transitLabel(from, to) },
+        ...transitLegs(from, to, altTrainMinutes),
         { mode: 'walk', from: to, to, minutes: 6 },
       ],
     },

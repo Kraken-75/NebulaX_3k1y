@@ -48,8 +48,12 @@ body {
   background: var(--bg);
 }
 
+/* Browsers don't make <button> inherit text color by default, which is how
+   the dark-mode "invisible button text" class of bug happens — this makes
+   every button themed correctly unless a rule explicitly overrides it. */
 button {
   font: inherit;
+  color: inherit;
 }
 
 h1, h2, h3 {

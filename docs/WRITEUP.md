@@ -122,6 +122,15 @@ a real deployment, and a judge from transport operations would be right to push 
 - **Routing**: OneMap integration is a real client, not yet wired into the live journey endpoint
   (see Architecture above) — journeys are a labeled demo fixture with real street-level geometry
   layered on top for the walk/cycle legs.
+- **Generic-pair cross-line transfers**: for any pair not on Arjun's hand-crafted corridor, a
+  transfer between lines is modeled as a single synthetic midpoint labeled "Interchange" — not a
+  real named interchange station, since there's no real topology data behind the generic generator.
+  Honest about being a transfer, not honest about exactly where.
+- **Route detail view (GMaps-style)**: computed board/alight clock times and estimated stop counts
+  are arithmetic on the one real number available (leg duration) presented the way a transit app
+  conventionally shows a trip, not real schedule/stop data (this app has no data source for either).
+  GMaps' own "Save" and "Report delay" buttons were deliberately not replicated — they'd have no
+  real function in this app, and shipping them would mean fake, non-functional UI.
 - **Thundering-herd mitigation**: every alternative now gets an incentive (not one randomly chosen
   route), which already spreads load across 2 alternatives instead of funneling everyone onto a
   single "the" alternate. Still no rate-limited/tracked steering across time — see the incentive

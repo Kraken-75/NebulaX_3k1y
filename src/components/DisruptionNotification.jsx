@@ -1,9 +1,10 @@
-// Styled to read like a phone lock-screen notification. Deliberately only
-// 3 lines — what happened, whether it affects you, the single top action —
-// per the notification-design brief: everything else (full comparison,
-// crowding, incentives) lives inside the app after tapping, never here.
-// This is a simulated in-app banner, not a real OS push notification (no
-// service worker / Web Push permission dance needed for the demo).
+// Styled to read like a phone lock-screen notification. Fires for ANY
+// active disruption regardless of whether it touches the current from/to —
+// a commuter whose trip isn't affected still gets told so, just without an
+// action line, per the brief's own 3-line design: what happened, whether it
+// affects you, and (only when it does) the one top action. This is a
+// simulated in-app banner, not a real OS push notification (no service
+// worker / Web Push permission dance needed for the demo).
 function DisruptionNotification({ headline, affectsYou, topActionLabel, onTap }) {
   return (
     <button type="button" className="phone-notification" onClick={onTap}>
@@ -12,9 +13,11 @@ function DisruptionNotification({ headline, affectsYou, topActionLabel, onTap })
         <span className="phone-notification-app">NebulaX · now</span>
         <span className="phone-notification-line">{headline}</span>
         <span className="phone-notification-line">{affectsYou}</span>
-        <span className="phone-notification-line phone-notification-action">
-          {topActionLabel} — tap for more options
-        </span>
+        {topActionLabel && (
+          <span className="phone-notification-line phone-notification-action">
+            {topActionLabel} — click to find out how your route has changed
+          </span>
+        )}
       </span>
     </button>
   )

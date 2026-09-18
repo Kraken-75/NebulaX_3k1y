@@ -205,57 +205,117 @@
   gap: 14px;
 }
 
-.route-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.route-card.route-affected {
-  border-color: #fecaca;
-}
-
-.route-card-top {
+/* --- Route preview row (GMaps directions-list style) --- */
+.route-preview-row {
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
 }
 
-.rank-badge {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-  border-radius: 999px;
-  background: var(--primary-bg);
-  color: var(--primary-dark);
-  font-weight: 700;
-  font-size: 14px;
+.route-preview-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 44px;
+}
+
+.route-preview-minutes {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.route-preview-minutes-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.route-preview-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.route-preview-range {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.route-preview-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.route-preview-leg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.route-preview-arrow {
+  color: var(--text-muted);
+  margin: 0 2px;
+}
+
+.route-preview-mode-icon {
+  font-size: 16px;
+}
+
+.route-preview-walk-minutes {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.route-preview-line-badge {
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 5px;
+  letter-spacing: 0.02em;
+}
+
+.route-preview-caption {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.route-preview-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.route-card-heading {
-  flex: 1;
+.route-preview-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
-.route-card-heading h3 {
-  font-size: 17px;
+.route-preview-badge.badge-affected {
+  background: var(--affected-bg);
+  color: var(--affected);
 }
 
-.route-time {
-  color: var(--text-muted);
-  font-size: 14px;
-  margin-top: 2px;
-}
-
-.uncertainty {
-  color: var(--text-muted);
-  font-size: 12px;
+.route-preview-badge.badge-reward {
+  background: linear-gradient(135deg, var(--reward-a), var(--reward-b));
+  color: white;
 }
 
 .status-chip {
@@ -274,26 +334,6 @@
 .status-chip.affected {
   background: var(--affected-bg);
   color: var(--affected);
-}
-
-.route-legs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.leg-chip {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 12px;
-}
-
-.leg-chip-affected {
-  border-color: var(--affected);
-  color: var(--affected);
-  font-weight: 700;
 }
 
 .crowding-line {
@@ -339,17 +379,167 @@
   font-size: 26px;
 }
 
-.choose-route-button {
-  background: var(--primary);
-  color: white;
+/* --- Route detail sheet (GMaps step-by-step) --- */
+.route-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* Leaflet's own controls default to z-index 1000 — comfortably clear
+     that so this modal never lets the map's +/- buttons bleed through. */
+  z-index: 2000;
+}
+
+.route-detail-sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 88svh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.route-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.route-detail-minutes {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.route-detail-arrive {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.route-detail-close {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border-radius: 999px;
   border: none;
-  border-radius: 12px;
-  padding: 12px;
-  font-weight: 700;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
   cursor: pointer;
 }
 
-.choose-route-button:disabled {
+.route-detail-icons {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.route-detail-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.timeline-point .timeline-title {
+  font-weight: 700;
+}
+
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  min-height: 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: var(--text-muted);
+}
+
+.timeline-dot-start {
+  background: var(--primary);
+}
+
+.timeline-dot-end {
+  background: var(--affected);
+}
+
+.timeline-dot-walk {
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.timeline-title {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text);
+  margin: 0;
+}
+
+.timeline-time {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.timeline-walk {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.timeline-transit-group {
+  border-left: 4px solid;
+  margin-left: 5px;
+  padding: 4px 0 4px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeline-transit-group .timeline-row {
+  padding: 2px 0;
+}
+
+.timeline-line-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.timeline-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.route-detail-start-button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.route-detail-start-button:disabled {
   opacity: 0.6;
   cursor: default;
 }
@@ -408,6 +598,7 @@
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--surface);
+  color: var(--text);
   padding: 10px;
   cursor: pointer;
 }
@@ -550,7 +741,9 @@
   left: 50%;
   width: 100%;
   max-width: 480px;
-  z-index: 100;
+  /* Above Leaflet's own controls (z-index 1000) so the map's +/- buttons
+     never bleed through the notification when both are on screen. */
+  z-index: 1500;
   display: flex;
   gap: 12px;
   align-items: flex-start;
@@ -662,7 +855,8 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  z-index: 40;
+  /* Above Leaflet's own controls (z-index 1000) for the same reason. */
+  z-index: 1200;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -702,6 +896,7 @@
 
 /* --- From/To panel (Home) --- */
 .from-to-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -709,6 +904,27 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 12px;
+}
+
+.from-to-panel .station-input-field {
+  padding-right: 48px;
+}
+
+.swap-button {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 2;
 }
 
 /* --- Confirmed route header (back arrow) --- */
@@ -727,6 +943,7 @@
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
+  color: var(--text);
   font-size: 18px;
   cursor: pointer;
   display: grid;

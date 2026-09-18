@@ -2,6 +2,7 @@ import { useState } from 'react'
 import UrgencyToggle from '../components/UrgencyToggle'
 import DemoModeBadge from '../components/DemoModeBadge'
 import RouteCard from '../components/RouteCard'
+import RouteDetailSheet from '../components/RouteDetailSheet'
 import MapView from '../components/MapView'
 import DisruptionNotification from '../components/DisruptionNotification'
 import CommunityUpdatesFeed from '../components/CommunityUpdatesFeed'
@@ -10,15 +11,15 @@ import { useJourney } from '../hooks/useJourney'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useLiveLocation } from '../hooks/useLiveLocation'
 import { useStations } from '../hooks/useStations'
-import { findNearestStation } from '../lib/stationUtils'
 import { redeemIncentive, triggerDemoDisruption, resetDemoDisruption } from '../lib/api'
 
-// Everyday mode shows one plain, Gmaps-style route. The moment a disruption
-// makes any candidate route "affected", a top-of-screen notification the
-// commuter has to tap replaces it, revealing the 3-route comparison +
-// incentives. Choosing one of those then becomes the new main route (with a
-// back arrow to reopen the comparison) — nothing else (crowding, incentive
-// detail) is dumped straight on screen up front.
+// Everyday mode shows one plain, Gmaps-style route. A disruption notification
+// fires for ANY active disruption, whether or not it touches the current
+// trip — tapping it opens the app to whatever's relevant (the 3-route
+// comparison if affected, otherwise just the usual route). Every route,
+// single or one of several, is a compact preview until tapped, at which
+// point its full step-by-step detail opens (RouteDetailSheet) — matching
+// how GMaps itself works, not a custom pattern.
 function HomePage({ urgency, onUrgencyChange, homeWork }) {
   const { stations, loading: stationsLoading } = useStations()
   const liveLocation = useLiveLocation()
@@ -28,42 +29,48 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
   const [to, setTo] = useState(null)
   const [routeInitialized, setRouteInitialized] = useState(false)
 
-  // From defaults to the nearest station to the commuter's live location
-  // (falling back to their saved home station); To defaults to their saved
-  // work station. Both stay fully editable afterward — this only seeds the
-  // fields once, the moment the station directory is available.
+  // Defaults to the commuter's saved home -> work trip. Both fields stay
+  // fully editable afterward; this only seeds them once.
   if (!routeInitialized && stations.length > 0) {
     setRouteInitialized(true)
-    setFrom(findNearestStation(liveLocation, stations) || homeWork.home)
+    setFrom(homeWork.home)
     setTo(homeWork.work)
   }
 
   const { data, loading, error, usingCache, reload } = useJourney(urgency, from?.id, to?.id)
 
   const [revealed, setRevealed] = useState(false)
-  const [lastHasDisruption, setLastHasDisruption] = useState(false)
+  const [lastDisruptionActive, setLastDisruptionActive] = useState(false)
   const [confirmedRouteId, setConfirmedRouteId] = useState(null)
+  const [expandedRouteId, setExpandedRouteId] = useState(null)
   const [choosingId, setChoosingId] = useState(null)
   const [confirmation, setConfirmation] = useState('')
   const [demoBusy, setDemoBusy] = useState(false)
 
   const routes = data?.routes || []
   const hasDisruption = routes.some((route) => route.affected)
+  // A disruption can be "live" without touching this specific trip — the
+  // notification still needs to fire, per feedback: only its content (and
+  // whether there's a route change to see) differs.
+  const disruptionActive = Boolean(
+    data?.demoTriggered || (data?.disruptions || []).some((alert) => alert.status === 'Disruption'),
+  )
 
-  // Reset "revealed"/"confirmed" the moment disruption state changes (a
-  // fresh disruption should show the notification again; clearing one
-  // should reset for next time) — adjusted during render rather than in an
-  // effect, per React's own guidance for state that depends on a derived
-  // value.
-  if (hasDisruption !== lastHasDisruption) {
-    setLastHasDisruption(hasDisruption)
+  // Reset "revealed"/"confirmed" the moment a disruption starts or clears —
+  // adjusted during render rather than in an effect, per React's own
+  // guidance for state that depends on a derived value.
+  if (disruptionActive !== lastDisruptionActive) {
+    setLastDisruptionActive(disruptionActive)
     setRevealed(false)
     setConfirmedRouteId(null)
+    setExpandedRouteId(null)
   }
 
   const topRoute = routes[0]
   const confirmedRoute = routes.find((route) => route.id === confirmedRouteId)
-  const focusedRouteId = confirmedRoute?.id ?? (revealed || !hasDisruption ? topRoute?.id : undefined)
+  const expandedRoute = routes.find((route) => route.id === expandedRouteId)
+  const displayedRoutes = confirmedRoute ? [confirmedRoute] : hasDisruption && revealed ? routes : topRoute ? [topRoute] : []
+  const focusedRouteId = confirmedRoute?.id ?? expandedRoute?.id ?? topRoute?.id
 
   async function handleChooseRoute(route) {
     setChoosingId(route.id)
@@ -75,7 +82,8 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
       } else {
         setConfirmation(`${route.label} selected. Have a good trip.`)
       }
-      setConfirmedRouteId(route.id)
+      if (hasDisruption) setConfirmedRouteId(route.id)
+      setExpandedRouteId(null)
     } catch {
       setConfirmation('Could not confirm that just now — your route is still selected.')
     } finally {
@@ -105,11 +113,17 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
 
   const disruption = data?.disruptions?.[0]
   const notificationText = disruption
-    ? {
-        headline: disruption.message.split('.')[0].slice(0, 70),
-        affectsYou: `Your ${from?.name} → ${to?.name} trip is affected`,
-        topActionLabel: `Take "${topRoute?.label}" instead`,
-      }
+    ? hasDisruption
+      ? {
+          headline: disruption.message.split('.')[0].slice(0, 70),
+          affectsYou: `Your ${from?.name} → ${to?.name} trip is affected`,
+          topActionLabel: `Take "${topRoute?.label}" instead`,
+        }
+      : {
+          headline: disruption.message.split('.')[0].slice(0, 70),
+          affectsYou: `This doesn't affect your ${from?.name} → ${to?.name} trip`,
+          topActionLabel: null,
+        }
     : null
 
   return (
@@ -118,6 +132,18 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
 
       <div className="from-to-panel">
         <StationSearchInput label="From" value={from} onSelect={setFrom} stations={stations} placeholder="Choose a station" />
+        <button
+          type="button"
+          className="swap-button"
+          aria-label="Swap from and to"
+          onClick={() => {
+            const previousFrom = from
+            setFrom(to)
+            setTo(previousFrom)
+          }}
+        >
+          ⇅
+        </button>
         <StationSearchInput label="To" value={to} onSelect={setTo} stations={stations} placeholder="Choose a station" />
       </div>
 
@@ -130,7 +156,7 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
       {loading && !data && <p className="loading-line">Finding your route…</p>}
       {error && <p className="error-line">{error}</p>}
 
-      {hasDisruption && !revealed && notificationText && (
+      {disruptionActive && !revealed && notificationText && (
         <DisruptionNotification
           headline={notificationText.headline}
           affectsYou={notificationText.affectsYou}
@@ -139,44 +165,33 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
         />
       )}
 
-      {(!hasDisruption || revealed) && routes.length > 0 && (
+      {displayedRoutes.length > 0 && (
         <>
           <MapView routes={routes} focusedRouteId={focusedRouteId} liveLocation={liveLocation} />
 
-          {confirmedRoute ? (
-            <>
-              <div className="route-confirmed-header">
-                <button
-                  type="button"
-                  className="back-arrow-button"
-                  aria-label="Back to route options"
-                  onClick={() => setConfirmedRouteId(null)}
-                >
-                  ←
-                </button>
-                <span>Your route</span>
-              </div>
-              <RouteCard route={confirmedRoute} variant="single" />
-            </>
-          ) : !hasDisruption ? (
-            <RouteCard route={topRoute} variant="single" />
-          ) : (
-            <div className="route-list">
-              {routes.map((route) => (
-                <RouteCard
-                  key={route.id}
-                  route={route}
-                  variant="comparison"
-                  onChooseRoute={handleChooseRoute}
-                  choosing={choosingId === route.id}
-                />
-              ))}
+          {confirmedRoute && (
+            <div className="route-confirmed-header">
+              <button
+                type="button"
+                className="back-arrow-button"
+                aria-label="Back to route options"
+                onClick={() => setConfirmedRouteId(null)}
+              >
+                ←
+              </button>
+              <span>Your route</span>
             </div>
           )}
 
-          {confirmation && !confirmedRoute && <p className="confirmation-line">{confirmation}</p>}
+          <div className="route-list">
+            {displayedRoutes.map((route) => (
+              <RouteCard key={route.id} route={route} onOpen={(r) => setExpandedRouteId(r.id)} />
+            ))}
+          </div>
 
-          {revealed && !confirmedRoute && <CommunityUpdatesFeed updates={data?.communityUpdates} />}
+          {confirmation && <p className="confirmation-line">{confirmation}</p>}
+
+          {revealed && hasDisruption && !confirmedRoute && <CommunityUpdatesFeed updates={data?.communityUpdates} />}
         </>
       )}
 
@@ -192,6 +207,17 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
           </button>
         </div>
       </details>
+
+      {expandedRoute && (
+        <RouteDetailSheet
+          route={expandedRoute}
+          from={from}
+          to={to}
+          onClose={() => setExpandedRouteId(null)}
+          onChoose={handleChooseRoute}
+          choosing={choosingId === expandedRoute.id}
+        />
+      )}
     </section>
   )
 }

@@ -1,86 +1,59 @@
-const MODE_ICON = { walk: '🚶', cycle: '🚲', lrt: '🚈', train: '🚆', bus: '🚌' }
+import { legColor, legCode } from '../lib/lineColors'
+import { formatClock, addMinutes, headwayMinutes } from '../lib/routeTiming'
 
-function crowdingLabel(score) {
-  if (score >= 1.5) return { text: 'High crowding', className: 'crowd-high' }
-  if (score >= 0.75) return { text: 'Moderate crowding', className: 'crowd-medium' }
-  return { text: 'Low crowding', className: 'crowd-low' }
-}
+const MODE_ICON = { walk: '🚶', lrt: '🚈', train: '🚇', bus: '🚌' }
 
-// Mirrors server/services/incentiveCalculator.js's tiers with copy a
-// non-technical user reads at a glance — no "tier" jargon on screen.
-const INCENTIVE_COPY = {
-  large: { icon: '🌟', title: 'Big reward for choosing this route' },
-  medium: { icon: '🎁', title: 'Earn a reward for choosing this route' },
-  small: { icon: '🙂', title: 'Small reward for choosing this route' },
-}
-
-// variant "single": plain Gmaps-style summary for everyday mode, no
-// rank/choose/incentive clutter since there's nothing to compare against.
-// variant "comparison": full card used once a disruption puts 2-3 routes
-// (and possibly an incentive) in front of the commuter to choose between.
-function RouteCard({ route, onChooseRoute, choosing, variant = 'comparison' }) {
-  const crowding = crowdingLabel(route.crowdScore)
-  const isComparison = variant === 'comparison'
+// Compact preview row matching the GMaps directions-list pattern: big
+// duration, a departure–arrival time range, then a left-to-right strip of
+// mode icons with colored line-code badges — nothing more until tapped.
+// Tapping opens the full step-by-step detail (RouteDetailSheet).
+function RouteCard({ route, onOpen }) {
+  const now = new Date()
+  const arrive = addMinutes(now, route.totalMinutes)
+  const firstTransitLeg = route.legs.find((leg) => leg.mode !== 'walk')
 
   return (
-    <article className={`route-card${route.affected ? ' route-affected' : ''}`}>
-      <div className="route-card-top">
-        {isComparison && (
-          <span className="rank-badge" aria-label={`Rank ${route.rank}`}>#{route.rank}</span>
-        )}
-        <div className="route-card-heading">
-          <h3>{route.label}</h3>
-          <p className="route-time">
-            {route.totalMinutes} min <span className="uncertainty">± {route.uncertaintyMinutes} min</span>
-          </p>
-        </div>
-        {isComparison &&
-          (route.affected ? (
-            <span className="status-chip affected">Affected by disruption</span>
-          ) : (
-            <span className="status-chip clear">Clear route</span>
+    <button type="button" className="route-preview-row" onClick={() => onOpen(route)}>
+      <div className="route-preview-time">
+        <span className="route-preview-minutes">{route.totalMinutes}</span>
+        <span className="route-preview-minutes-label">min</span>
+      </div>
+
+      <div className="route-preview-main">
+        <p className="route-preview-range">
+          {formatClock(now)} – {formatClock(arrive)}
+        </p>
+        <div className="route-preview-icons">
+          {route.legs.map((leg, index) => (
+            <span className="route-preview-leg" key={index}>
+              {index > 0 && <span className="route-preview-arrow">›</span>}
+              <span className="route-preview-mode-icon" aria-hidden="true">
+                {MODE_ICON[leg.mode] || '•'}
+              </span>
+              {leg.mode === 'walk' ? (
+                <span className="route-preview-walk-minutes">{leg.minutes}</span>
+              ) : (
+                <span className="route-preview-line-badge" style={{ background: legColor(leg) }}>
+                  {legCode(leg)}
+                </span>
+              )}
+            </span>
           ))}
-      </div>
-
-      <div className="route-legs" aria-label="Journey legs">
-        {route.legs.map((leg, index) => (
-          <span
-            key={index}
-            className={`leg-chip${leg.affected ? ' leg-chip-affected' : ''}`}
-            title={leg.line || leg.mode}
-          >
-            {MODE_ICON[leg.mode] || '•'} {leg.minutes}m
-          </span>
-        ))}
-      </div>
-
-      <p className={`crowding-line ${crowding.className}`}>{crowding.text}</p>
-
-      {isComparison && route.incentiveEligible && (
-        <div className={`incentive-banner incentive-${route.incentiveTier}`}>
-          <span className="incentive-icon" aria-hidden="true">
-            {INCENTIVE_COPY[route.incentiveTier]?.icon || '🎁'}
-          </span>
-          <div>
-            <p className="incentive-title">{INCENTIVE_COPY[route.incentiveTier]?.title}</p>
-            <p className="incentive-copy">
-              Help spread the load and earn {route.incentivePoints} points.
-            </p>
-          </div>
         </div>
-      )}
+        {firstTransitLeg && (
+          <p className="route-preview-caption">
+            every {headwayMinutes(firstTransitLeg.mode)} min from {firstTransitLeg.from.name}
+          </p>
+        )}
+      </div>
 
-      {isComparison && (
-        <button
-          type="button"
-          className="choose-route-button"
-          onClick={() => onChooseRoute(route)}
-          disabled={choosing}
-        >
-          {choosing ? 'Confirming…' : 'Choose this route'}
-        </button>
-      )}
-    </article>
+      <div className="route-preview-badges">
+        {route.affected && <span className="route-preview-badge badge-affected">Affected</span>}
+        {route.incentiveEligible && (
+          <span className="route-preview-badge badge-reward">🎁 {route.incentivePoints}</span>
+        )}
+      </div>
+    </button>
   )
 }
 
