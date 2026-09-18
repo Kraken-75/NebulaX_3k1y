@@ -92,11 +92,17 @@ a real deployment, and a judge from transport operations would be right to push 
   polled from Telegram/X — every entry is labeled `source: 'mock-telegram'` in code, shown in the
   UI as an ordinary "Community updates" list rather than called out loudly, per the brief's
   guidance that this doesn't need to be defensible as real, just honest in the codebase.
-- **Onboarding, location, same-day override**: a 2-tap home/work signup (`GET /api/stations`,
-  station data stays backend-owned) runs once and is cached in `localStorage`; a live-location
-  marker uses browser geolocation with a labeled fixed-coordinate fallback if permission is denied;
-  "Ask Me" is a same-day-only destination override (one lightweight alternate fixture, Punggol →
-  Raffles Place — not full arbitrary-station routing).
+- **Onboarding & location**: a 2-tap home/work signup (`GET /api/stations`, station data stays
+  backend-owned) runs once and is cached in `localStorage`; a live-location marker uses browser
+  geolocation with a labeled fixed-coordinate fallback if permission is denied.
+- **Editable From/To routing for any pair**: Home shows always-visible, always-editable From/To
+  fields (GMaps-style), seeded from live location/home/work but freely searchable against a
+  ~49-station directory (`server/data/stationDirectory.js`, all 6 rail lines). Arjun's specific
+  Punggol → one-north corridor keeps its hand-crafted fixture (the bridging-bus/disruption demo
+  scenario); any other pair gets 3 routes generated from real straight-line distance
+  (`server/services/mockRouteGenerator.js`) — clearly still mock data, but honestly reflecting the
+  actual selected pair rather than silently substituting a fixed corridor, which is what the
+  earlier "Ask Me" one-alternate-fixture design did and was reported as confusing/inaccurate.
 
 ## Assumptions
 
@@ -116,8 +122,10 @@ a real deployment, and a judge from transport operations would be right to push 
 - **Routing**: OneMap integration is a real client, not yet wired into the live journey endpoint
   (see Architecture above) — journeys are a labeled demo fixture with real street-level geometry
   layered on top for the walk/cycle legs.
-- **Thundering-herd mitigation** is randomized diversification only, not rate-limited/tracked
-  steering — see the incentive section above.
+- **Thundering-herd mitigation**: every alternative now gets an incentive (not one randomly chosen
+  route), which already spreads load across 2 alternatives instead of funneling everyone onto a
+  single "the" alternate. Still no rate-limited/tracked steering across time — see the incentive
+  section above.
 - **Mobile testing**: verified via Playwright at a 390×844 phone viewport, not a physical device,
   since this build ran in a sandboxed cloud environment without one attached. This should be
   re-verified on an actual phone before the final demo recording.
@@ -132,11 +140,12 @@ a real deployment, and a judge from transport operations would be right to push 
   a recording is reproducible take after take); on the ambient/non-demo path it's randomized like
   a real live feed would be, which means the bridging candidate's rank can vary outside of a demo
   session — intentional, not a bug, but worth knowing if testing manually without the trigger.
-- **Home/work signup only fully supports one station pair** (Punggol ↔ one-north); other choices
-  in the picker are honestly non-functional rather than faked, per the product owner's explicit
-  "use mock datasets, prioritize demo-ability" direction for this pass.
-- **"Ask Me" override** supports exactly one alternate destination (Raffles Place), not arbitrary
-  stations, for the same reason.
+- **Any from/to pair now produces a route** (~49-station directory, see Architecture), resolving
+  the earlier limitation where only Punggol ↔ one-north was functional — but only that specific
+  pair has the hand-crafted fixture (bridging bus, tuned disruption/incentive numbers); every other
+  pair gets a generic distance-based mock route, not real transit topology.
+- **Dark mode** doesn't re-theme the map tile layer — a real dark tile needs a paid provider
+  (MapTiler/Stadia), out of scope for this demo build.
 
 ## Measurement methodology (how we'd judge success)
 

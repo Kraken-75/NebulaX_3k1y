@@ -20,6 +20,25 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Explicit toggle (Settings page), not prefers-color-scheme — the user
+   picks light/dark themselves rather than inheriting the OS setting.
+   Map tiles are left as-is in dark mode: a real dark tile layer needs a
+   paid provider (MapTiler/Stadia), out of scope for this demo build. */
+:root[data-theme='dark'] {
+  --primary: #3b82f6;
+  --primary-dark: #93c5fd;
+  --primary-bg: #1e3a5f;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --border: #334155;
+  --clear: #34d399;
+  --clear-bg: #064e3b;
+  --affected: #f87171;
+  --affected-bg: #450a0a;
+}
+
 * {
   box-sizing: border-box;
 }

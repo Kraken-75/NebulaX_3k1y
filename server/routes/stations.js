@@ -1,12 +1,16 @@
 import { Router } from 'express'
-import { HOME_OPTIONS, WORK_OPTIONS } from '../data/stations.js'
+import { STATION_DIRECTORY } from '../data/stationDirectory.js'
 
 const router = Router()
 
-// Backs the 2-tap home/work signup picker. Station reference data lives
-// here, not duplicated in the frontend, per the separation-of-concerns rule.
+// Backs the from/to autocomplete (Home, Signup, Settings' "change home/work"
+// all share the same station data) — station reference data lives here, not
+// duplicated in the frontend, per the separation-of-concerns rule. The
+// directory is small enough (~40 stations) that the frontend fetches it
+// once and filters client-side as the user types, rather than round-
+// tripping per keystroke.
 router.get('/', (req, res) => {
-  res.json({ homeOptions: HOME_OPTIONS, workOptions: WORK_OPTIONS })
+  res.json({ stations: STATION_DIRECTORY })
 })
 
 export default router

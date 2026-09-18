@@ -10,9 +10,8 @@ async function request(path, options) {
   return response.json()
 }
 
-export function getJourney(urgency, { altDestination = false } = {}) {
-  const params = new URLSearchParams({ urgency })
-  if (altDestination) params.set('dest', 'today')
+export function getJourney(urgency, { fromId, toId }) {
+  const params = new URLSearchParams({ urgency, fromId, toId })
   return request(`/api/journey?${params.toString()}`)
 }
 

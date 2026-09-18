@@ -1,4 +1,4 @@
-import { calculateIncentiveTier } from './incentiveCalculator.js'
+import { calculateIncentiveTier, TIER_POINTS } from './incentiveCalculator.js'
 
 const CROWD_LEVEL_SCORE = { l: 0, m: 1, h: 2 }
 
@@ -94,36 +94,39 @@ export function rankRoutes({ journeys, crowding, weather, disruptions, urgency =
   const top3 = scored.slice(0, 3)
   const ranked = top3.map((route, index) => ({ ...route, rank: index + 1 }))
 
-  // Load-spreading incentive: only offered when the commuter isn't rushing
-  // (per the urgency toggle), and only when the top route is meaningfully
-  // more crowded than a close-enough alternative. The alternative is chosen
-  // randomly among qualifying candidates each call, not a fixed runner-up —
-  // recommending everyone to the *same* alternate route would just recreate
-  // the crowding problem on that route (see docs/WRITEUP.md).
-  let incentiveRouteId = null
-  if (urgency !== 'rushing' && ranked.length > 1) {
-    const top = ranked[0]
-    const candidates = ranked.filter(
-      (route) =>
-        route.id !== top.id &&
-        route.crowdScore < top.crowdScore - 0.4 &&
-        route.totalMinutes - top.totalMinutes <= 10,
-    )
-    if (candidates.length > 0) {
-      incentiveRouteId = candidates[Math.floor(Math.random() * candidates.length)].id
-    }
-  }
-
+  // Load-spreading incentive: offered on every alternative to the top pick
+  // (not just one) when the commuter isn't rushing — every non-default
+  // choice is asking for a trade-off, so every one gets compensated for it.
+  // Naturally spreads load across 2 alternatives instead of funneling
+  // everyone onto a single "the" alternate route (see docs/WRITEUP.md).
   const top = ranked[0]
+  const TIER_ORDER = ['small', 'medium', 'large']
+  let minTierIndex = -1 // ratchets up strictly with each worse-ranked alternative, below
+
   return ranked.map((route) => {
-    if (route.id !== incentiveRouteId) {
+    if (urgency === 'rushing' || route.id === top.id) {
       return { ...route, incentiveEligible: false, incentiveTier: null, incentivePoints: 0 }
     }
-    const { tier, points } = calculateIncentiveTier({
+
+    const { tier } = calculateIncentiveTier({
       topCrowdScore: top.crowdScore,
       alternativeCrowdScore: route.crowdScore,
       timeDeltaMinutes: route.totalMinutes - top.totalMinutes,
     })
-    return { ...route, incentiveEligible: true, incentiveTier: tier, incentivePoints: points }
+
+    // Routes are processed in rank order (best alternative first). Each
+    // worse-ranked alternative is asking the commuter for a bigger sacrifice
+    // than the one before it, so it must land on a strictly higher tier —
+    // not merely "not lower" — capped at "large" once there's no room left.
+    const tierIndex = Math.max(TIER_ORDER.indexOf(tier), minTierIndex + 1)
+    minTierIndex = tierIndex
+    const finalTier = TIER_ORDER[tierIndex]
+
+    return {
+      ...route,
+      incentiveEligible: true,
+      incentiveTier: finalTier,
+      incentivePoints: TIER_POINTS[finalTier],
+    }
   })
 }

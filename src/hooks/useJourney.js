@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react'
 import { getJourney } from '../lib/api'
 
-function cacheKey(altDestination) {
-  return `nebulax:lastJourney:${altDestination ? 'today' : 'main'}`
+function cacheKey(fromId, toId) {
+  return `nebulax:lastJourney:${fromId}:${toId}`
 }
 
-function readCache(altDestination) {
+function readCache(fromId, toId) {
   try {
-    const raw = localStorage.getItem(cacheKey(altDestination))
+    const raw = localStorage.getItem(cacheKey(fromId, toId))
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
   }
 }
 
-function writeCache(altDestination, data) {
+function writeCache(fromId, toId, data) {
   try {
-    localStorage.setItem(cacheKey(altDestination), JSON.stringify(data))
+    localStorage.setItem(cacheKey(fromId, toId), JSON.stringify(data))
   } catch {
     // Storage can be unavailable (private browsing, quota) — caching is a
     // convenience, never something the app depends on to function.
@@ -24,31 +24,32 @@ function writeCache(altDestination, data) {
 }
 
 // Handles the "underground = no signal" case: if a fresh fetch fails, fall
-// back to the last successful response instead of showing a dead screen.
-// The "Ask Me" today-only override is cached separately from Arjun's usual
-// commute so a network hiccup while toggling it doesn't show the wrong trip.
-export function useJourney(urgency, { altDestination = false } = {}) {
-  const [data, setData] = useState(() => readCache(altDestination))
+// back to the last successful response for this exact from/to pair instead
+// of showing a dead screen or a stale trip for a different pair.
+export function useJourney(urgency, fromId, toId) {
+  const [data, setData] = useState(() => (fromId && toId ? readCache(fromId, toId) : null))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [usingCache, setUsingCache] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
+    if (!fromId || !toId) return
+
     let cancelled = false
     setLoading(true) // eslint-disable-line react-hooks/set-state-in-effect -- legitimate loading flag for this fetch, not a derivable value
 
-    getJourney(urgency, { altDestination })
+    getJourney(urgency, { fromId, toId })
       .then((fresh) => {
         if (cancelled) return
         setData(fresh)
         setUsingCache(false)
         setError('')
-        writeCache(altDestination, fresh)
+        writeCache(fromId, toId, fresh)
       })
       .catch(() => {
         if (cancelled) return
-        const cached = readCache(altDestination)
+        const cached = readCache(fromId, toId)
         if (cached) {
           setData(cached)
           setUsingCache(true)
@@ -64,7 +65,7 @@ export function useJourney(urgency, { altDestination = false } = {}) {
     return () => {
       cancelled = true
     }
-  }, [urgency, altDestination, reloadKey])
+  }, [urgency, fromId, toId, reloadKey])
 
   return { data, loading, error, usingCache, reload: () => setReloadKey((key) => key + 1) }
 }
