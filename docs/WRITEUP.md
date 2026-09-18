@@ -16,20 +16,36 @@ realistic "some days I'm rushing, some days I'm not" idea *within* Arjun's own p
 same 3 candidate routes are ranked, and whether a load-spreading incentive is offered at all. This
 is Arjun's own flexibility trait, not three competing personas.
 
-## The core differentiator: incentivized load-spreading
+## The core differentiators: incentivized load-spreading, and surfacing bridging buses
 
 MyTransport, Google Maps, Citymapper and Grab all *report* crowding; none of them try to actively
-rebalance it. `server/services/rankingEngine.js` scores the 3 candidate routes on time, real
-crowding data, and weather (rain increases the cost of exposed walk/cycle legs), weighted
-differently depending on Arjun's urgency setting. When the top-ranked route is meaningfully more
-crowded than a close alternative — and only when Arjun isn't rushing — the app offers a mocked
-voucher (`server/state/incentiveStore.js`) for choosing that alternative instead, styled as a
-partner-brand reward (FairPrice, Kopitiam, Polar Puffs, Koufu) in `src/pages/RewardsPage.jsx`.
+rebalance it, and none of them treat a bridging/shuttle bus service as a first-class route option —
+during a real disruption, that's information those apps simply don't show. This app does both.
+
+**Load-spreading incentive.** `server/services/rankingEngine.js` scores the (up to 4) candidate
+routes on time, real crowding data, and weather (rain increases the cost of exposed walk legs),
+weighted differently depending on Arjun's urgency setting. When the top-ranked route is
+meaningfully more crowded than a close alternative — and only when Arjun isn't rushing — the app
+offers a mocked voucher for choosing that alternative instead. The reward isn't a flat amount: a
+dedicated module, `server/services/incentiveCalculator.js`, tiers it (small/medium/large) from how
+crowded the top route is versus how much extra time the alternative costs — a big, easy win gets a
+big reward; a marginal one gets little or none. It's deliberately coarse tiering, not cent-level
+math, so it stays easy to demo and explain. Styled as a partner-brand reward (FairPrice, Kopitiam,
+Polar Puffs, Koufu) in `src/pages/RewardsPage.jsx`.
+
+**Bridging buses as a genuine candidate.** When a disruption's expected delay passes LTA's real
+~30-minute threshold for declaring a dedicated bridging bus service (modeled as
+`bridgingBusDeclared` in `server/data/mockDisruptions.js`), the ranking engine adds that bridging
+route as a real 4th candidate (`server/data/mockJourneys.js`'s `BRIDGING_BUS_ROUTE`) and scores it
+on equal footing with the rest — it wins a top-3 slot only when it's genuinely competitive, not by
+default and not never. Its crowding comes from `server/services/busArrivalClient.js`: real LTA
+`v3/BusArrival` `Load` field first, falling back to a simulated "next arrival" reading (explicitly
+flagged `isMock` in code) since a temporary bridging service has no real telemetry to query.
 
 **This is explicitly a demonstrated concept, not a production voucher system.** No real payment or
 redemption integration exists; a real deployment would need a partnership with something like
 HPB Healthy365 or an SG retail rewards aggregator, plus a persistent, auditable ledger instead of
-the in-memory mock store used here.
+the in-memory mock store used here (`server/state/incentiveStore.js`).
 
 **Thundering-herd risk, and how we hedged it:** if every commuter on the crowded route is steered
 to the *same* alternative, that alternative stops being the less-crowded choice — the tool would
@@ -71,6 +87,22 @@ a real deployment, and a judge from transport operations would be right to push 
   score itself.
 - **Weather**: `server/services/weatherClient.js` calls data.gov.sg's 2-hour nowcast (no key
   needed) to weight sheltered vs. exposed routes higher when it's raining near Punggol.
+- **Secondary disruption signal**: `server/data/mockTelegramFeed.js`, styled on the real SGMRT
+  Telegram channel's public-update format. Entirely synthetic — generated here, never scraped or
+  polled from Telegram/X — every entry is labeled `source: 'mock-telegram'` in code, shown in the
+  UI as an ordinary "Community updates" list rather than called out loudly, per the brief's
+  guidance that this doesn't need to be defensible as real, just honest in the codebase.
+- **Onboarding & location**: a 2-tap home/work signup (`GET /api/stations`, station data stays
+  backend-owned) runs once and is cached in `localStorage`; a live-location marker uses browser
+  geolocation with a labeled fixed-coordinate fallback if permission is denied.
+- **Editable From/To routing for any pair**: Home shows always-visible, always-editable From/To
+  fields (GMaps-style), seeded from live location/home/work but freely searchable against a
+  ~49-station directory (`server/data/stationDirectory.js`, all 6 rail lines). Arjun's specific
+  Punggol → one-north corridor keeps its hand-crafted fixture (the bridging-bus/disruption demo
+  scenario); any other pair gets 3 routes generated from real straight-line distance
+  (`server/services/mockRouteGenerator.js`) — clearly still mock data, but honestly reflecting the
+  actual selected pair rather than silently substituting a fixed corridor, which is what the
+  earlier "Ask Me" one-alternate-fixture design did and was reported as confusing/inaccurate.
 
 ## Assumptions
 
@@ -90,8 +122,20 @@ a real deployment, and a judge from transport operations would be right to push 
 - **Routing**: OneMap integration is a real client, not yet wired into the live journey endpoint
   (see Architecture above) — journeys are a labeled demo fixture with real street-level geometry
   layered on top for the walk/cycle legs.
-- **Thundering-herd mitigation** is randomized diversification only, not rate-limited/tracked
-  steering — see the incentive section above.
+- **Generic-pair cross-line transfers**: for any pair not on Arjun's hand-crafted corridor, a
+  transfer between lines is modeled at a real named interchange station looked up from
+  `server/data/stationDirectory.js` (picking the geographically best one when more than one exists
+  for that line pair), not a synthetic midpoint — see `docs/AUDIT_V5.md`. Still simulated travel
+  time and straight-line leg geometry, not a real routing engine's path between stations.
+- **Route detail view (GMaps-style)**: computed board/alight clock times and estimated stop counts
+  are arithmetic on the one real number available (leg duration) presented the way a transit app
+  conventionally shows a trip, not real schedule/stop data (this app has no data source for either).
+  GMaps' own "Save" and "Report delay" buttons were deliberately not replicated — they'd have no
+  real function in this app, and shipping them would mean fake, non-functional UI.
+- **Thundering-herd mitigation**: every alternative now gets an incentive (not one randomly chosen
+  route), which already spreads load across 2 alternatives instead of funneling everyone onto a
+  single "the" alternate. Still no rate-limited/tracked steering across time — see the incentive
+  section above.
 - **Mobile testing**: verified via Playwright at a 390×844 phone viewport, not a physical device,
   since this build ran in a sandboxed cloud environment without one attached. This should be
   re-verified on an actual phone before the final demo recording.
@@ -102,6 +146,16 @@ a real deployment, and a judge from transport operations would be right to push 
 - **Incentive system** is entirely mocked in-memory (see above) and resets on server restart.
 - **Demo-disruption trigger** is also in-memory and resets on server restart — fine for a single
   recording session, not meant to represent persistent state.
+- **Bridging bus crowding is deterministic only during the demo trigger** (fixed at "moderate" so
+  a recording is reproducible take after take); on the ambient/non-demo path it's randomized like
+  a real live feed would be, which means the bridging candidate's rank can vary outside of a demo
+  session — intentional, not a bug, but worth knowing if testing manually without the trigger.
+- **Any from/to pair now produces a route** (~49-station directory, see Architecture), resolving
+  the earlier limitation where only Punggol ↔ one-north was functional — but only that specific
+  pair has the hand-crafted fixture (bridging bus, tuned disruption/incentive numbers); every other
+  pair gets a generic distance-based mock route, not real transit topology.
+- **Dark mode** doesn't re-theme the map tile layer — a real dark tile needs a paid provider
+  (MapTiler/Stadia), out of scope for this demo build.
 
 ## Measurement methodology (how we'd judge success)
 

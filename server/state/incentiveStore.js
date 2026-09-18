@@ -2,18 +2,26 @@
 // redemption integration. In-memory by design; a production version would
 // need a real partner (e.g. HPB Healthy365 or an SG retail rewards
 // aggregator) and a persistent, auditable ledger, not this.
+import { VOUCHER_TIERS } from '../data/voucherTiers.js'
+import { TIER_POINTS } from '../services/incentiveCalculator.js'
+
 const PARTNER_BRANDS = ['Polar Puffs & Cakes', 'FairPrice', 'Kopitiam', 'Koufu']
 
-let pointsBalance = 120
+let pointsBalance = 50
 const history = [
   { id: 'seed-1', brand: 'FairPrice', points: 50, note: 'Welcome bonus', earnedAt: null },
 ]
 
 export function getIncentiveState() {
-  return { pointsBalance, history }
+  return { pointsBalance, history, tiers: VOUCHER_TIERS }
 }
 
-export function awardIncentive({ routeId, points = 30 }) {
+// The client only ever names WHICH tier it displayed to the commuter
+// (server/services/incentiveCalculator.js computed it during ranking) — the
+// actual points value always comes from this server-side lookup, never a
+// raw number the client sends, even though this whole system is mocked.
+export function awardIncentive({ routeId, tier }) {
+  const points = TIER_POINTS[tier] ?? TIER_POINTS.small
   const brand = PARTNER_BRANDS[Math.floor(Math.random() * PARTNER_BRANDS.length)]
   pointsBalance += points
   const entry = {
@@ -21,6 +29,26 @@ export function awardIncentive({ routeId, points = 30 }) {
     brand,
     points,
     note: `Chose the less-crowded route (${routeId})`,
+    earnedAt: new Date().toISOString(),
+  }
+  history.unshift(entry)
+  return { pointsBalance, entry }
+}
+
+export function redeemVoucher(tierId) {
+  const tier = VOUCHER_TIERS.find((candidate) => candidate.id === tierId)
+  if (!tier) {
+    throw new Error(`Unknown voucher tier "${tierId}"`)
+  }
+  if (pointsBalance < tier.threshold) {
+    throw new Error('Not enough points yet for this voucher')
+  }
+  pointsBalance -= tier.threshold
+  const entry = {
+    id: `redeem-${Date.now()}`,
+    brand: tier.brand,
+    points: -tier.threshold,
+    note: `Redeemed ${tier.label}`,
     earnedAt: new Date().toISOString(),
   }
   history.unshift(entry)

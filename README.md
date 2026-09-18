@@ -2,14 +2,16 @@
 
 Built for **NEBULA X** (LTA / Google Cloud / SMRT / SBS Transit / CRRC, NUS-hosted), Problem
 Statement 2. A mobile-first web app that gives one commuter — **Arjun**, a flexible Punggol →
-one-north bike + LRT/bus commuter who values comfort and predictability over raw speed — proactive,
-door-to-door route advice, and rewards him for choosing a less-crowded route when it helps spread
-load off the busiest one.
+one-north commuter who values comfort and predictability over raw speed — proactive, door-to-door
+route advice: a plain single-route view day to day, a phone-style notification the moment a
+disruption hits, and (unlike Google Maps, Citymapper or MyTransport) a real bridging-bus option and
+a scaled reward for choosing a less-crowded alternative when it helps spread load off the busiest
+route.
 
 See [`docs/WRITEUP.md`](docs/WRITEUP.md) for the persona rationale, architecture, assumptions,
-limitations and measurement methodology. See [`docs/AUDIT.md`](docs/AUDIT.md) and
-[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this build decided what to keep from the
-repo's earlier branches and the order it was built in.
+limitations and measurement methodology. See `docs/AUDIT*.md` (v1 through v5) and
+[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this build decided what to keep across each
+revision and the order it was built in.
 
 ## Quick start (zero setup friction, zero API keys required)
 
@@ -43,10 +45,22 @@ exactly how each integration degrades when its key is missing.
 ## Demoing a disruption reliably
 
 Live disruption feeds are "quiet normally" — a real MRT fault won't reliably occur at the moment
-you want to record a demo. Open the **Plan** tab, expand **"Demo controls (for screen recording)"**,
-and press **Trigger test disruption** for a deterministic, reproducible disruption scenario (a
-North East Line fault between Sengkang and Dhoby Ghaut). Press **Reset** to clear it. This state is
-in-memory on the backend and resets when the server restarts.
+you want to record a demo. On first run, search and pick a home and work station. On **Home**, the
+From/To fields default to Punggol → one-north (Arjun's persona, and the only pair with the full
+hand-crafted disruption scenario — any other pair still produces a route, just a generically
+mocked one). Expand **"Simulate a disruption (for demo)"** and press **Trigger disruption** for a
+deterministic, reproducible scenario, picked at random from 3 (never the one already showing, so
+repeated triggers always visibly change something): a North East Line fault between Sengkang and
+Dhoby Ghaut, an East West Line fault between Clementi and Redhill, or a North South Line fault
+between Orchard and Raffles Place. Only the North East Line scenario touches Arjun's own
+Punggol → one-north corridor — when it's active, a bridging bus service is declared, a phone-style
+notification drops in from the top of the screen (tap it to reveal the ranked 3-route comparison
+including the bridging bus as a real candidate, each alternative scaled to its own reward), plus a
+"Community updates" feed styled on the SGMRT Telegram channel (entirely synthetic, generated
+locally). The other two scenarios still show the notification, correctly telling Arjun it doesn't
+affect his trip — pick a From/To pair that actually crosses the affected line (e.g. Orchard →
+Raffles Place) to see that scenario's own route impact instead. Press **Reset** to clear it. This
+state is in-memory on the backend and resets when the server restarts.
 
 ## Map tiles
 
@@ -60,14 +74,21 @@ and point `src/components/MapView.jsx`'s `TileLayer` `url`/`attribution` at that
 
 ```
 server/            Express backend — the only place secrets or external API calls live
-  services/        LTA DataMall, OneMap, OSRM, data.gov.sg clients (each degrades to mock on failure)
-  routes/          /api/journey, /api/disruptions, /api/crowding, /api/weather, /api/incentives, /api/demo
-  data/            Labeled mock fixtures used when a live source is unavailable
+  services/        LTA DataMall, OneMap, OSRM, BusArrival, data.gov.sg clients, the mock route
+                    generator, incentive tiering (each external-API client degrades to a
+                    labeled mock on failure)
+  routes/          /api/journey, /api/disruptions, /api/crowding, /api/weather, /api/incentives,
+                    /api/demo, /api/stations
+  data/            Labeled mock fixtures used when a live source is unavailable (Arjun's
+                    hand-crafted corridor + bridging-bus route, disruptions, crowding, weather,
+                    the mock Telegram feed, the ~49-station directory, voucher tiers)
   state/           In-memory demo-disruption toggle and mocked incentive ledger
 src/               React frontend — only ever calls our own /api/* endpoints (src/lib/api.js)
-  pages/           Home, Planner, Announcements, Rewards
-  components/      MapView, RouteCard, UrgencyToggle, BottomNav, DemoModeBadge
-  hooks/           useJourney (fetch + offline cache), useOnlineStatus
+  pages/           Signup, Home (route planner + disruption flow), Rewards, Settings
+  components/      MapView, RouteCard, UrgencyToggle, BottomNav, DemoModeBadge,
+                    DisruptionNotification, CommunityUpdatesFeed, StationSearchInput
+  hooks/           useJourney (fetch + offline cache), useOnlineStatus, useLiveLocation,
+                    useHomeWork, useStations, useDarkMode
 ```
 
 ## Scripts
@@ -80,7 +101,8 @@ src/               React frontend — only ever calls our own /api/* endpoints (
 ## Known limitations
 
 See [`docs/WRITEUP.md`](docs/WRITEUP.md#limitations) for the full list — notably: OneMap
-multi-modal routing has a real client implemented but isn't wired into `/api/journey` yet (it
-currently always serves the labeled Punggol → one-north demo itinerary, enriched with real OSRM
-street geometry for the walk/cycle legs), and mobile testing was done via viewport emulation, not
-a physical device, in this build environment.
+multi-modal routing has a real client implemented but isn't wired into `/api/journey` yet; any
+from/to pair now produces a route, but only Punggol → one-north has the hand-crafted disruption
+scenario, everything else is a generic distance-based mock; dark mode doesn't re-theme the map
+tiles; and mobile testing was done via viewport emulation, not a physical device, in this build
+environment.

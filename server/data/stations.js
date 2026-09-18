@@ -1,7 +1,11 @@
-// Approximate real-world coordinates for the corridor Arjun's persona uses
-// (Punggol -> one-north). Precise enough for demo map rendering; not surveyed.
+// Waypoints for Arjun's specific, fully-modeled demo corridor (Punggol ->
+// one-north) used by mockJourneys.js's hand-crafted fixture routes and the
+// bridging bus. Approximate coordinates — precise enough for demo map
+// rendering, not surveyed. For any other from/to pair, routes come from
+// server/services/mockRouteGenerator.js against the broader
+// server/data/stationDirectory.js instead.
 export const STATIONS = {
-  punggolBikeStand: { name: 'Punggol Park Connector (bike stand)', lat: 1.4041, lng: 103.9023 },
+  punggolHome: { name: 'Punggol Park Connector (near home)', lat: 1.4041, lng: 103.9023 },
   punggolLrt: { name: 'Punggol LRT / MRT Interchange', lat: 1.4054, lng: 103.9023 },
   sengkang: { name: 'Sengkang MRT/LRT', lat: 1.3915, lng: 103.895 },
   serangoon: { name: 'Serangoon MRT', lat: 1.3499, lng: 103.873 },

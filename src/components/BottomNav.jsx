@@ -1,8 +1,10 @@
+// Planning and alerts live inside Home's own flow rather than separate
+// tabs, per the "make it as simple as possible" feedback — Settings is the
+// one addition, for profile/dark-mode/default-stations.
 const TABS = [
   { id: 'home', label: 'Home', icon: '🏠' },
-  { id: 'planner', label: 'Plan', icon: '🧭' },
-  { id: 'announcements', label: 'Alerts', icon: '📣' },
   { id: 'rewards', label: 'Rewards', icon: '🎁' },
+  { id: 'settings', label: 'Settings', icon: '⚙️' },
 ]
 
 // Bottom tab bar, not a top nav: large one-handed-reachable tap targets for

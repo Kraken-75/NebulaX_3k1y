@@ -4,6 +4,10 @@ import { STATIONS as S } from './stations.js'
 // OneMap credentials aren't configured or the live routing call fails, so the
 // route planner always has something legible to show (per the brief: "quiet
 // normally" live feeds must not block a demoable route).
+//
+// Rail and bus only, no cycling, and every walking leg stays under the
+// 10-minute cap — a candidate that couldn't meet that would be discarded or
+// rerouted rather than shown.
 export const MOCK_JOURNEYS = {
   key: 'punggol-onenorth',
   isMock: true,
@@ -14,7 +18,7 @@ export const MOCK_JOURNEYS = {
       totalMinutes: 42,
       uncertaintyMinutes: 6,
       legs: [
-        { mode: 'cycle', from: S.punggolBikeStand, to: S.punggolLrt, minutes: 6 },
+        { mode: 'walk', from: S.punggolHome, to: S.punggolLrt, minutes: 6 },
         { mode: 'lrt', from: S.punggolLrt, to: S.sengkang, minutes: 4, line: 'Punggol LRT' },
         { mode: 'train', from: S.sengkang, to: S.dhobyGhaut, minutes: 16, line: 'North East Line' },
         { mode: 'train', from: S.dhobyGhaut, to: S.oneNorth, minutes: 14, line: 'Circle Line' },
@@ -27,7 +31,7 @@ export const MOCK_JOURNEYS = {
       totalMinutes: 49,
       uncertaintyMinutes: 4,
       legs: [
-        { mode: 'cycle', from: S.punggolBikeStand, to: S.onePunggolBus, minutes: 8 },
+        { mode: 'walk', from: S.punggolHome, to: S.onePunggolBus, minutes: 8 },
         { mode: 'bus', from: S.onePunggolBus, to: S.serangoon, minutes: 18, line: 'Bus 83' },
         { mode: 'train', from: S.serangoon, to: S.buonaVista, minutes: 19, line: 'Circle Line' },
         { mode: 'walk', from: S.buonaVista, to: S.oneNorth, minutes: 4 },
@@ -39,12 +43,31 @@ export const MOCK_JOURNEYS = {
       totalMinutes: 46,
       uncertaintyMinutes: 5,
       legs: [
-        { mode: 'walk', from: S.punggolBikeStand, to: S.punggolLrt, minutes: 5 },
+        { mode: 'walk', from: S.punggolHome, to: S.punggolLrt, minutes: 5 },
         { mode: 'lrt', from: S.punggolLrt, to: S.sengkang, minutes: 4, line: 'Punggol LRT' },
         { mode: 'train', from: S.sengkang, to: S.dhobyGhaut, minutes: 16, line: 'North East Line' },
         { mode: 'train', from: S.dhobyGhaut, to: S.buonaVista, minutes: 12, line: 'Circle Line' },
         { mode: 'walk', from: S.buonaVista, to: S.oneNorth, minutes: 4 },
       ],
     },
+  ],
+}
+
+// Generated as an extra candidate only when a disruption declares a
+// dedicated bridging bus service (see server/data/mockDisruptions.js'
+// bridgingBusDeclared flag and server/routes/journey.js). Real transit apps
+// (Google Maps, Citymapper, MyTransport) don't surface bridging services as
+// first-class route options — this app deliberately does, per the brief.
+export const BRIDGING_BUS_ROUTE = {
+  id: 'bridging',
+  label: 'Bridging bus (NEL relief)',
+  totalMinutes: 47,
+  uncertaintyMinutes: 10,
+  legs: [
+    { mode: 'walk', from: S.punggolHome, to: S.punggolLrt, minutes: 5 },
+    { mode: 'lrt', from: S.punggolLrt, to: S.sengkang, minutes: 4, line: 'Punggol LRT' },
+    { mode: 'bus', from: S.sengkang, to: S.dhobyGhaut, minutes: 22, line: 'NEL Bridging Bus' },
+    { mode: 'train', from: S.dhobyGhaut, to: S.oneNorth, minutes: 14, line: 'Circle Line' },
+    { mode: 'walk', from: S.oneNorth, to: S.oneNorth, minutes: 2 },
   ],
 }

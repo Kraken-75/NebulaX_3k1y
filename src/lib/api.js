@@ -10,23 +10,32 @@ async function request(path, options) {
   return response.json()
 }
 
-export function getJourney(urgency) {
-  return request(`/api/journey?urgency=${encodeURIComponent(urgency)}`)
+export function getJourney(urgency, { fromId, toId }) {
+  const params = new URLSearchParams({ urgency, fromId, toId })
+  return request(`/api/journey?${params.toString()}`)
 }
 
-export function getDisruptions() {
-  return request('/api/disruptions')
+export function getStations() {
+  return request('/api/stations')
 }
 
 export function getIncentives() {
   return request('/api/incentives')
 }
 
-export function redeemIncentive(routeId) {
+export function redeemIncentive(routeId, tier) {
   return request('/api/incentives/redeem', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ routeId }),
+    body: JSON.stringify({ routeId, tier }),
+  })
+}
+
+export function redeemVoucher(tierId) {
+  return request('/api/incentives/redeem-voucher', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tierId }),
   })
 }
 
