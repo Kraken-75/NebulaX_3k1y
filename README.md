@@ -9,7 +9,7 @@ a scaled reward for choosing a less-crowded alternative when it helps spread loa
 route.
 
 See [`docs/WRITEUP.md`](docs/WRITEUP.md) for the persona rationale, architecture, assumptions,
-limitations and measurement methodology. See `docs/AUDIT*.md` (v1 through v5) and
+limitations and measurement methodology. See `docs/AUDIT*.md` (v1 through v6) and
 [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this build decided what to keep across each
 revision and the order it was built in.
 
@@ -102,7 +102,9 @@ src/               React frontend — only ever calls our own /api/* endpoints (
 
 See [`docs/WRITEUP.md`](docs/WRITEUP.md#limitations) for the full list — notably: OneMap
 multi-modal routing has a real client implemented but isn't wired into `/api/journey` yet; any
-from/to pair now produces a route, but only Punggol → one-north has the hand-crafted disruption
-scenario, everything else is a generic distance-based mock; dark mode doesn't re-theme the map
-tiles; and mobile testing was done via viewport emulation, not a physical device, in this build
-environment.
+from/to pair now produces a route (its train option a real shortest path across the real
+interchange network, even across multiple changes), but only Punggol → one-north has the
+hand-crafted disruption scenario and a bus option with any real data behind it — every other pair's
+bus route is honestly labeled simulated, since no live LTA DataMall key is configured in this
+environment; dark mode doesn't re-theme the map tiles; and mobile testing was done via viewport
+emulation, not a physical device, in this build environment.

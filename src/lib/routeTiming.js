@@ -20,9 +20,13 @@ export function headwayMinutes(mode) {
   return 6
 }
 
-// Estimated intermediate stop count from leg duration, assuming ~2.5 min
-// between stops — an estimate, not a real stop list (which this app has no
-// data source for), used only for the "Ride N stops" detail-view line.
+// Fallback estimate of intermediate stop count from leg duration alone,
+// assuming ~2.5 min between stops — used only for legs with no real
+// distance behind them (Arjun's hand-crafted corridor fixture). Any leg
+// from the generic route generator carries its own `estimatedStops`
+// computed server-side from real distance (see mockRouteGenerator.js) and
+// takes priority over this — see its use in RouteDetailSheet.jsx. Neither
+// is a real stop list (this app has no data source for one).
 export function estimateStops(minutes) {
   return Math.max(1, Math.round(minutes / 2.5))
 }

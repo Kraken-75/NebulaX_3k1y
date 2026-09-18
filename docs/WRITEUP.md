@@ -122,11 +122,24 @@ a real deployment, and a judge from transport operations would be right to push 
 - **Routing**: OneMap integration is a real client, not yet wired into the live journey endpoint
   (see Architecture above) — journeys are a labeled demo fixture with real street-level geometry
   layered on top for the walk/cycle legs.
-- **Generic-pair cross-line transfers**: for any pair not on Arjun's hand-crafted corridor, a
-  transfer between lines is modeled at a real named interchange station looked up from
-  `server/data/stationDirectory.js` (picking the geographically best one when more than one exists
-  for that line pair), not a synthetic midpoint — see `docs/AUDIT_V5.md`. Still simulated travel
-  time and straight-line leg geometry, not a real routing engine's path between stations.
+- **Generic-pair cross-line transfers**: for any pair not on Arjun's hand-crafted corridor, the
+  "Fastest" route is a real shortest path across every real interchange in
+  `server/data/stationDirectory.js` — a proper multi-hop search, not just a single guessed transfer,
+  so a pair needing more than one change (e.g. Woodlands → Sengkang, via Bishan then Serangoon) finds
+  that real path too, not just the nearest one-transfer option. See `docs/AUDIT_V5.md`/`V6.md`. Still
+  simulated travel time and straight-line leg geometry (real distance, not a real routing engine's
+  street/track-level path), and per-leg stop counts are an estimate from that distance, not a real
+  stop list.
+- **Generic-pair bus route ("Comfort")**: entirely simulated — no live LTA DataMall key is
+  configured in this environment (`LTA_ACCOUNT_KEY`), so there's no way to verify a real bus stop
+  name or a real service number actually runs between an arbitrary selected pair. Rather than invent
+  a specific-looking but unverified bus number, it's labeled plainly ("Bus (simulated route)",
+  generic "BUS" badge) and boards/alights at the real MRT station rather than a fabricated bus stop
+  name. Only the train ("Fastest") option reflects real network topology for a generic pair.
+  Only 2 routes are generated for a generic pair now, not 3 — an earlier 3rd "Alternative" always
+  ended up an exact duplicate of "Fastest" (same real shortest path exists only once) with just a
+  different made-up duration, so it was dropped rather than kept as a fabricated-looking option —
+  see `docs/AUDIT_V6.md`.
 - **Route detail view (GMaps-style)**: computed board/alight clock times and estimated stop counts
   are arithmetic on the one real number available (leg duration) presented the way a transit app
   conventionally shows a trip, not real schedule/stop data (this app has no data source for either).
