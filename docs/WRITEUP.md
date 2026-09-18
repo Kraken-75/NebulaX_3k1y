@@ -16,20 +16,36 @@ realistic "some days I'm rushing, some days I'm not" idea *within* Arjun's own p
 same 3 candidate routes are ranked, and whether a load-spreading incentive is offered at all. This
 is Arjun's own flexibility trait, not three competing personas.
 
-## The core differentiator: incentivized load-spreading
+## The core differentiators: incentivized load-spreading, and surfacing bridging buses
 
 MyTransport, Google Maps, Citymapper and Grab all *report* crowding; none of them try to actively
-rebalance it. `server/services/rankingEngine.js` scores the 3 candidate routes on time, real
-crowding data, and weather (rain increases the cost of exposed walk/cycle legs), weighted
-differently depending on Arjun's urgency setting. When the top-ranked route is meaningfully more
-crowded than a close alternative — and only when Arjun isn't rushing — the app offers a mocked
-voucher (`server/state/incentiveStore.js`) for choosing that alternative instead, styled as a
-partner-brand reward (FairPrice, Kopitiam, Polar Puffs, Koufu) in `src/pages/RewardsPage.jsx`.
+rebalance it, and none of them treat a bridging/shuttle bus service as a first-class route option —
+during a real disruption, that's information those apps simply don't show. This app does both.
+
+**Load-spreading incentive.** `server/services/rankingEngine.js` scores the (up to 4) candidate
+routes on time, real crowding data, and weather (rain increases the cost of exposed walk legs),
+weighted differently depending on Arjun's urgency setting. When the top-ranked route is
+meaningfully more crowded than a close alternative — and only when Arjun isn't rushing — the app
+offers a mocked voucher for choosing that alternative instead. The reward isn't a flat amount: a
+dedicated module, `server/services/incentiveCalculator.js`, tiers it (small/medium/large) from how
+crowded the top route is versus how much extra time the alternative costs — a big, easy win gets a
+big reward; a marginal one gets little or none. It's deliberately coarse tiering, not cent-level
+math, so it stays easy to demo and explain. Styled as a partner-brand reward (FairPrice, Kopitiam,
+Polar Puffs, Koufu) in `src/pages/RewardsPage.jsx`.
+
+**Bridging buses as a genuine candidate.** When a disruption's expected delay passes LTA's real
+~30-minute threshold for declaring a dedicated bridging bus service (modeled as
+`bridgingBusDeclared` in `server/data/mockDisruptions.js`), the ranking engine adds that bridging
+route as a real 4th candidate (`server/data/mockJourneys.js`'s `BRIDGING_BUS_ROUTE`) and scores it
+on equal footing with the rest — it wins a top-3 slot only when it's genuinely competitive, not by
+default and not never. Its crowding comes from `server/services/busArrivalClient.js`: real LTA
+`v3/BusArrival` `Load` field first, falling back to a simulated "next arrival" reading (explicitly
+flagged `isMock` in code) since a temporary bridging service has no real telemetry to query.
 
 **This is explicitly a demonstrated concept, not a production voucher system.** No real payment or
 redemption integration exists; a real deployment would need a partnership with something like
 HPB Healthy365 or an SG retail rewards aggregator, plus a persistent, auditable ledger instead of
-the in-memory mock store used here.
+the in-memory mock store used here (`server/state/incentiveStore.js`).
 
 **Thundering-herd risk, and how we hedged it:** if every commuter on the crowded route is steered
 to the *same* alternative, that alternative stops being the less-crowded choice — the tool would
@@ -71,6 +87,16 @@ a real deployment, and a judge from transport operations would be right to push 
   score itself.
 - **Weather**: `server/services/weatherClient.js` calls data.gov.sg's 2-hour nowcast (no key
   needed) to weight sheltered vs. exposed routes higher when it's raining near Punggol.
+- **Secondary disruption signal**: `server/data/mockTelegramFeed.js`, styled on the real SGMRT
+  Telegram channel's public-update format. Entirely synthetic — generated here, never scraped or
+  polled from Telegram/X — every entry is labeled `source: 'mock-telegram'` in code, shown in the
+  UI as an ordinary "Community updates" list rather than called out loudly, per the brief's
+  guidance that this doesn't need to be defensible as real, just honest in the codebase.
+- **Onboarding, location, same-day override**: a 2-tap home/work signup (`GET /api/stations`,
+  station data stays backend-owned) runs once and is cached in `localStorage`; a live-location
+  marker uses browser geolocation with a labeled fixed-coordinate fallback if permission is denied;
+  "Ask Me" is a same-day-only destination override (one lightweight alternate fixture, Punggol →
+  Raffles Place — not full arbitrary-station routing).
 
 ## Assumptions
 
@@ -102,6 +128,15 @@ a real deployment, and a judge from transport operations would be right to push 
 - **Incentive system** is entirely mocked in-memory (see above) and resets on server restart.
 - **Demo-disruption trigger** is also in-memory and resets on server restart — fine for a single
   recording session, not meant to represent persistent state.
+- **Bridging bus crowding is deterministic only during the demo trigger** (fixed at "moderate" so
+  a recording is reproducible take after take); on the ambient/non-demo path it's randomized like
+  a real live feed would be, which means the bridging candidate's rank can vary outside of a demo
+  session — intentional, not a bug, but worth knowing if testing manually without the trigger.
+- **Home/work signup only fully supports one station pair** (Punggol ↔ one-north); other choices
+  in the picker are honestly non-functional rather than faked, per the product owner's explicit
+  "use mock datasets, prioritize demo-ability" direction for this pass.
+- **"Ask Me" override** supports exactly one alternate destination (Raffles Place), not arbitrary
+  stations, for the same reason.
 
 ## Measurement methodology (how we'd judge success)
 

@@ -1,3 +1,5 @@
+import { calculateIncentiveTier } from './incentiveCalculator.js'
+
 const CROWD_LEVEL_SCORE = { l: 0, m: 1, h: 2 }
 
 function legCrowdScore(leg, crowding) {
@@ -86,7 +88,11 @@ export function rankRoutes({ journeys, crowding, weather, disruptions, urgency =
   })
 
   scored.sort((a, b) => a.score - b.score)
-  const ranked = scored.map((route, index) => ({ ...route, rank: index + 1 }))
+  // Pick top 3 by score before assigning rank numbers, so ranks 1-3 always
+  // refer to the actual survivors even when there were more than 3
+  // candidates (e.g. a bridging bus added on top of the usual 3 routes).
+  const top3 = scored.slice(0, 3)
+  const ranked = top3.map((route, index) => ({ ...route, rank: index + 1 }))
 
   // Load-spreading incentive: only offered when the commuter isn't rushing
   // (per the urgency toggle), and only when the top route is meaningfully
@@ -108,8 +114,16 @@ export function rankRoutes({ journeys, crowding, weather, disruptions, urgency =
     }
   }
 
-  return ranked.map((route) => ({
-    ...route,
-    incentiveEligible: route.id === incentiveRouteId,
-  }))
+  const top = ranked[0]
+  return ranked.map((route) => {
+    if (route.id !== incentiveRouteId) {
+      return { ...route, incentiveEligible: false, incentiveTier: null, incentivePoints: 0 }
+    }
+    const { tier, points } = calculateIncentiveTier({
+      topCrowdScore: top.crowdScore,
+      alternativeCrowdScore: route.crowdScore,
+      timeDeltaMinutes: route.totalMinutes - top.totalMinutes,
+    })
+    return { ...route, incentiveEligible: true, incentiveTier: tier, incentivePoints: points }
+  })
 }

@@ -20,19 +20,15 @@ export function getStations() {
   return request('/api/stations')
 }
 
-export function getDisruptions() {
-  return request('/api/disruptions')
-}
-
 export function getIncentives() {
   return request('/api/incentives')
 }
 
-export function redeemIncentive(routeId) {
+export function redeemIncentive(routeId, tier) {
   return request('/api/incentives/redeem', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ routeId }),
+    body: JSON.stringify({ routeId, tier }),
   })
 }
 

@@ -310,6 +310,15 @@
   color: #92400e;
 }
 
+.incentive-large {
+  border-width: 2px;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25);
+}
+
+.incentive-large .incentive-icon {
+  font-size: 26px;
+}
+
 .choose-route-button {
   background: var(--primary);
   color: white;
@@ -381,6 +390,41 @@
   background: var(--surface);
   padding: 10px;
   cursor: pointer;
+}
+
+/* --- Community updates (mock secondary disruption feed) --- */
+.community-updates {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 13px;
+  background: var(--surface);
+}
+
+.community-updates summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.community-updates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.community-update-line {
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.community-update-time {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 6px;
+  text-transform: uppercase;
 }
 
 /* --- Rewards --- */

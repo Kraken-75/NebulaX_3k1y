@@ -5,6 +5,7 @@ import RouteCard from '../components/RouteCard'
 import MapView from '../components/MapView'
 import DisruptionNotification from '../components/DisruptionNotification'
 import AskMeSheet from '../components/AskMeSheet'
+import CommunityUpdatesFeed from '../components/CommunityUpdatesFeed'
 import { useJourney } from '../hooks/useJourney'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useLiveLocation } from '../hooks/useLiveLocation'
@@ -47,7 +48,7 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
     setConfirmation('')
     try {
       if (route.incentiveEligible) {
-        const result = await redeemIncentive(route.id)
+        const result = await redeemIncentive(route.id, route.incentiveTier)
         setConfirmation(`Nice — you earned ${result.entry.points} points from ${result.entry.brand}.`)
       } else {
         setConfirmation(`${route.label} selected. Have a good trip.`)
@@ -135,6 +136,8 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
           )}
 
           {confirmation && <p className="confirmation-line">{confirmation}</p>}
+
+          {revealed && <CommunityUpdatesFeed updates={data?.communityUpdates} />}
         </>
       )}
 

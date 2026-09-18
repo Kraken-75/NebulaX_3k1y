@@ -2,14 +2,16 @@
 
 Built for **NEBULA X** (LTA / Google Cloud / SMRT / SBS Transit / CRRC, NUS-hosted), Problem
 Statement 2. A mobile-first web app that gives one commuter — **Arjun**, a flexible Punggol →
-one-north bike + LRT/bus commuter who values comfort and predictability over raw speed — proactive,
-door-to-door route advice, and rewards him for choosing a less-crowded route when it helps spread
-load off the busiest one.
+one-north commuter who values comfort and predictability over raw speed — proactive, door-to-door
+route advice: a plain single-route view day to day, a phone-style notification the moment a
+disruption hits, and (unlike Google Maps, Citymapper or MyTransport) a real bridging-bus option and
+a scaled reward for choosing a less-crowded alternative when it helps spread load off the busiest
+route.
 
 See [`docs/WRITEUP.md`](docs/WRITEUP.md) for the persona rationale, architecture, assumptions,
-limitations and measurement methodology. See [`docs/AUDIT.md`](docs/AUDIT.md) and
-[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this build decided what to keep from the
-repo's earlier branches and the order it was built in.
+limitations and measurement methodology. See [`docs/AUDIT.md`](docs/AUDIT.md)/
+[`docs/AUDIT_V2.md`](docs/AUDIT_V2.md) and [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this
+build decided what to keep across each revision and the order it was built in.
 
 ## Quick start (zero setup friction, zero API keys required)
 
@@ -43,10 +45,14 @@ exactly how each integration degrades when its key is missing.
 ## Demoing a disruption reliably
 
 Live disruption feeds are "quiet normally" — a real MRT fault won't reliably occur at the moment
-you want to record a demo. Open the **Plan** tab, expand **"Demo controls (for screen recording)"**,
-and press **Trigger test disruption** for a deterministic, reproducible disruption scenario (a
-North East Line fault between Sengkang and Dhoby Ghaut). Press **Reset** to clear it. This state is
-in-memory on the backend and resets when the server restarts.
+you want to record a demo. On first run, pick a home and work station (Punggol / one-north are the
+only fully-modeled pair). On **Home**, expand **"Simulate a disruption (for demo)"** and press
+**Trigger disruption** for a deterministic, reproducible scenario: a North East Line fault between
+Sengkang and Dhoby Ghaut, a bridging bus service declared, and a phone-style notification banner
+appears — tap it to reveal the ranked 3-route comparison (including the bridging bus as a real
+candidate) with a scaled reward on whichever alternative is worth taking, plus a "Community
+updates" feed styled on the SGMRT Telegram channel (entirely synthetic, generated locally). Press
+**Reset** to clear it. This state is in-memory on the backend and resets when the server restarts.
 
 ## Map tiles
 
@@ -60,14 +66,19 @@ and point `src/components/MapView.jsx`'s `TileLayer` `url`/`attribution` at that
 
 ```
 server/            Express backend — the only place secrets or external API calls live
-  services/        LTA DataMall, OneMap, OSRM, data.gov.sg clients (each degrades to mock on failure)
-  routes/          /api/journey, /api/disruptions, /api/crowding, /api/weather, /api/incentives, /api/demo
-  data/            Labeled mock fixtures used when a live source is unavailable
+  services/        LTA DataMall, OneMap, OSRM, BusArrival, data.gov.sg clients, incentive tiering
+                    (each external-API client degrades to a labeled mock on failure)
+  routes/          /api/journey, /api/disruptions, /api/crowding, /api/weather, /api/incentives,
+                    /api/demo, /api/stations
+  data/            Labeled mock fixtures used when a live source is unavailable (journeys, the
+                    bridging-bus route, disruptions, crowding, weather, the mock Telegram feed,
+                    station reference data, voucher tiers)
   state/           In-memory demo-disruption toggle and mocked incentive ledger
 src/               React frontend — only ever calls our own /api/* endpoints (src/lib/api.js)
-  pages/           Home, Planner, Announcements, Rewards
-  components/      MapView, RouteCard, UrgencyToggle, BottomNav, DemoModeBadge
-  hooks/           useJourney (fetch + offline cache), useOnlineStatus
+  pages/           Signup, Home (route planner + disruption flow), Rewards
+  components/      MapView, RouteCard, UrgencyToggle, BottomNav, DemoModeBadge,
+                    DisruptionNotification, AskMeSheet, CommunityUpdatesFeed
+  hooks/           useJourney (fetch + offline cache), useOnlineStatus, useLiveLocation, useHomeWork
 ```
 
 ## Scripts
@@ -82,5 +93,6 @@ src/               React frontend — only ever calls our own /api/* endpoints (
 See [`docs/WRITEUP.md`](docs/WRITEUP.md#limitations) for the full list — notably: OneMap
 multi-modal routing has a real client implemented but isn't wired into `/api/journey` yet (it
 currently always serves the labeled Punggol → one-north demo itinerary, enriched with real OSRM
-street geometry for the walk/cycle legs), and mobile testing was done via viewport emulation, not
-a physical device, in this build environment.
+street geometry for the walk legs); only that one station pair and one "Ask Me" alternate
+destination are fully modeled, by explicit design for this demo-first pass; and mobile testing was
+done via viewport emulation, not a physical device, in this build environment.

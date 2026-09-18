@@ -53,6 +53,25 @@ export const MOCK_JOURNEYS = {
   ],
 }
 
+// Generated as an extra candidate only when a disruption declares a
+// dedicated bridging bus service (see server/data/mockDisruptions.js'
+// bridgingBusDeclared flag and server/routes/journey.js). Real transit apps
+// (Google Maps, Citymapper, MyTransport) don't surface bridging services as
+// first-class route options — this app deliberately does, per the brief.
+export const BRIDGING_BUS_ROUTE = {
+  id: 'bridging',
+  label: 'Bridging bus (NEL relief)',
+  totalMinutes: 47,
+  uncertaintyMinutes: 10,
+  legs: [
+    { mode: 'walk', from: S.punggolHome, to: S.punggolLrt, minutes: 5 },
+    { mode: 'lrt', from: S.punggolLrt, to: S.sengkang, minutes: 4, line: 'Punggol LRT' },
+    { mode: 'bus', from: S.sengkang, to: S.dhobyGhaut, minutes: 22, line: 'NEL Bridging Bus' },
+    { mode: 'train', from: S.dhobyGhaut, to: S.oneNorth, minutes: 14, line: 'Circle Line' },
+    { mode: 'walk', from: S.oneNorth, to: S.oneNorth, minutes: 2 },
+  ],
+}
+
 // "Ask Me" same-day override fixture: a single lightweight route for when
 // Arjun isn't heading to his usual work station today. Deliberately just one
 // route, not a 3-way ranked comparison — this is a today-only override, not

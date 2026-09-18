@@ -6,6 +6,14 @@ function crowdingLabel(score) {
   return { text: 'Low crowding', className: 'crowd-low' }
 }
 
+// Mirrors server/services/incentiveCalculator.js's tiers with copy a
+// non-technical user reads at a glance — no "tier" jargon on screen.
+const INCENTIVE_COPY = {
+  large: { icon: '🌟', title: 'Big reward for choosing this route' },
+  medium: { icon: '🎁', title: 'Earn a reward for choosing this route' },
+  small: { icon: '🙂', title: 'Small reward for choosing this route' },
+}
+
 // variant "single": plain Gmaps-style summary for everyday mode, no
 // rank/choose/incentive clutter since there's nothing to compare against.
 // variant "comparison": full card used once a disruption puts 2-3 routes
@@ -49,11 +57,15 @@ function RouteCard({ route, onChooseRoute, choosing, variant = 'comparison' }) {
       <p className={`crowding-line ${crowding.className}`}>{crowding.text}</p>
 
       {isComparison && route.incentiveEligible && (
-        <div className="incentive-banner">
-          <span className="incentive-icon" aria-hidden="true">🎁</span>
+        <div className={`incentive-banner incentive-${route.incentiveTier}`}>
+          <span className="incentive-icon" aria-hidden="true">
+            {INCENTIVE_COPY[route.incentiveTier]?.icon || '🎁'}
+          </span>
           <div>
-            <p className="incentive-title">Earn a reward for choosing this route</p>
-            <p className="incentive-copy">Help spread the load and get a partner voucher.</p>
+            <p className="incentive-title">{INCENTIVE_COPY[route.incentiveTier]?.title}</p>
+            <p className="incentive-copy">
+              Help spread the load and earn {route.incentivePoints} points.
+            </p>
           </div>
         </div>
       )}

@@ -16,11 +16,11 @@ router.get(
 router.post(
   '/redeem',
   asyncHandler(async (req, res) => {
-    const { routeId } = req.body || {}
+    const { routeId, tier } = req.body || {}
     if (!routeId) {
       return res.status(400).json({ error: 'routeId is required' })
     }
-    const result = awardIncentive({ routeId })
+    const result = awardIncentive({ routeId, tier })
     res.json(result)
   }),
 )

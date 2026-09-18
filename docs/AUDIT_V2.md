@@ -37,10 +37,43 @@ a topological pre-filter, so this requirement was already satisfied by construct
   shape (balance + history) stays, since the Rewards page is being redesigned to show a progress
   bar toward tiered vouchers using that same shape.
 - Backend rework (bridging-bus routing, mock Telegram-style secondary disruption feed, the tiered
-  incentive-calculation module) is **deferred to a second pass**, per the product owner's explicit
-  priority call: fix the confusing frontend first. The current `/api/journey` response shape
-  (ranked routes with `affected`/`crowdScore`/`incentiveEligible`) is left intact so this second
-  pass can upgrade what's underneath without forcing another UI rewrite.
+  incentive-calculation module) was **deferred to a second pass** after the frontend simplification
+  — see "Second pass" below for what that pass actually built.
+
+## Second pass: the deferred backend work
+
+Built after the frontend simplification, on top of the same `/api/journey` response shape (no UI
+rewrite needed) — explicitly prioritized for demo reliability over production completeness, per
+the product owner: "use mock datasets if necessary."
+
+- **Bridging bus as a genuine top-3 candidate** (`server/data/mockJourneys.js`'s
+  `BRIDGING_BUS_ROUTE`, wired in `server/routes/journey.js`): only generated when a disruption
+  declares `bridgingBusDeclared` (modeling LTA's real >30 min threshold — see
+  `server/data/mockDisruptions.js`). It's a real candidate in the ranking, not a fixed winner or
+  loser — tuned so it wins outright only when its own (simulated) live crowding happens to be low,
+  which is deterministic during the demo trigger for reliable recording, and randomized on the
+  ambient/non-demo path. This is the differentiator no competitor app (Google Maps, Citymapper,
+  MyTransport) surfaces.
+- **Bus crowding priority order** (`server/services/busArrivalClient.js`): real `v3/BusArrival`
+  `Load` field first (will only succeed with a real LTA key *and* a real bus stop/service code —
+  realistically never for a temporary bridging service, but the real path is still exercised),
+  falling back to a simulated "next arrival" reading, explicitly flagged `isMock`/`source: 'mock'`
+  in code.
+- **Mock Telegram-style secondary feed** (`server/data/mockTelegramFeed.js`): entirely synthetic,
+  generated here — never scraped or polled from Telegram/X, per the brief's explicit instruction.
+  Labeled `source: 'mock-telegram'` internally; shown in the UI as an ordinary "Community updates"
+  section, not called out loudly, but never pretended to be a real API call in the code.
+- **Full disrupted stretch**: `DEMO_TRIGGER_DISRUPTIONS.affectedStations` now lists all 11 real NEL
+  stations between Sengkang and Dhoby Ghaut, not just the two endpoints.
+- **Dynamic tiered incentive** (`server/services/incentiveCalculator.js`, one module): replaces the
+  old flat 30-point award. Tiers (small/medium/large) from crowding relief vs. time cost — coarse
+  on purpose, not cent-level math, per the brief. The frontend only ever echoes back *which tier it
+  displayed*; the actual point value is always looked up server-side
+  (`server/state/incentiveStore.js`), so a client can't hand the mock ledger an arbitrary number.
+- Found and fixed a real bug while tuning this: the bridging bus's original timing (45 min) made it
+  win outright almost every time regardless of its own crowding, which meant it was never really a
+  "candidate to weigh" — retimed to 47 min so it wins specifically when it's genuinely the better
+  option, not by default.
 
 ## What's new in this pass (frontend simplification)
 

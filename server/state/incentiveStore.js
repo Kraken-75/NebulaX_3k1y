@@ -3,6 +3,7 @@
 // need a real partner (e.g. HPB Healthy365 or an SG retail rewards
 // aggregator) and a persistent, auditable ledger, not this.
 import { VOUCHER_TIERS } from '../data/voucherTiers.js'
+import { TIER_POINTS } from '../services/incentiveCalculator.js'
 
 const PARTNER_BRANDS = ['Polar Puffs & Cakes', 'FairPrice', 'Kopitiam', 'Koufu']
 
@@ -15,7 +16,12 @@ export function getIncentiveState() {
   return { pointsBalance, history, tiers: VOUCHER_TIERS }
 }
 
-export function awardIncentive({ routeId, points = 30 }) {
+// The client only ever names WHICH tier it displayed to the commuter
+// (server/services/incentiveCalculator.js computed it during ranking) — the
+// actual points value always comes from this server-side lookup, never a
+// raw number the client sends, even though this whole system is mocked.
+export function awardIncentive({ routeId, tier }) {
+  const points = TIER_POINTS[tier] ?? TIER_POINTS.small
   const brand = PARTNER_BRANDS[Math.floor(Math.random() * PARTNER_BRANDS.length)]
   pointsBalance += points
   const entry = {
