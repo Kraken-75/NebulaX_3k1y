@@ -11,10 +11,12 @@ Arjun is also the right fit for this app's core differentiating mechanic (see be
 specifically the kind of commuter who, when not in a hurry, would genuinely trade a few extra
 minutes for a calmer trip or a small reward. Rather than trying to also support the organizers'
 other personas (which the brief explicitly warns dilutes Problem Fit scoring), we represent the
-realistic "some days I'm rushing, some days I'm not" idea *within* Arjun's own profile: a simple
-**urgency toggle** ("I have time to spare" vs. "I need to get there fast") that changes how the
-same 3 candidate routes are ranked, and whether a load-spreading incentive is offered at all. This
-is Arjun's own flexibility trait, not three competing personas.
+realistic "some days I'm rushing, some days I'm not" idea *within* Arjun's own profile: when a
+disruption actually affects his selected journey, a simple **urgency toggle** ("I have time to
+spare" vs. "I need to get there fast") appears and changes how the candidate routes are ranked,
+and whether a load-spreading incentive is offered at all. It stays out of the everyday journey UI
+and during disruptions elsewhere on the network, where the choice would not be actionable. This is
+Arjun's own flexibility trait, not three competing personas.
 
 ## The core differentiators: incentivized load-spreading, and surfacing bridging buses
 
@@ -36,9 +38,12 @@ Polar Puffs, Koufu) in `src/pages/RewardsPage.jsx`.
 **Bridging buses as a genuine candidate.** When a disruption's expected delay passes LTA's real
 ~30-minute threshold for declaring a dedicated bridging bus service (modeled as
 `bridgingBusDeclared` in `server/data/mockDisruptions.js`), the ranking engine adds that bridging
-route as a real 4th candidate (`server/data/mockJourneys.js`'s `BRIDGING_BUS_ROUTE`) and scores it
-on equal footing with the rest — it wins a top-3 slot only when it's genuinely competitive, not by
-default and not never. Its crowding comes from `server/services/busArrivalClient.js`: real LTA
+route as a real 4th candidate for the "need to get there fast" response
+(`server/data/mockJourneys.js`'s `BRIDGING_BUS_ROUTE`) and scores it on equal footing with the rest
+— it wins a top-3 slot only when it's genuinely competitive, not by default and not never. The
+"time to spare" response excludes this operational shuttle so it cannot be duplicated across both
+choices or receive a load-spreading incentive. Its crowding comes from
+`server/services/busArrivalClient.js`: real LTA
 `v3/BusArrival` `Load` field first, falling back to a simulated "next arrival" reading (explicitly
 flagged `isMock` in code) since a temporary bridging service has no real telemetry to query.
 
@@ -140,6 +145,15 @@ a real deployment, and a judge from transport operations would be right to push 
   ended up an exact duplicate of "Fastest" (same real shortest path exists only once) with just a
   different made-up duration, so it was dropped rather than kept as a fabricated-looking option —
   see `docs/AUDIT_V6.md`.
+- **Disruption bus alternatives for "time to spare"**: connectivity, station exits, and service
+  identifiers come from the user-supplied static SBS Transit/SMRT JSON snapshots stored in
+  `server/data/busAlternatives/`; they are not a live journey-planning feed. At the first affected
+  rail segment, the backend finds a supplied bus connection to an unaffected MRT station, then
+  uses the app's real interchange graph for the remaining train journey while excluding the
+  disrupted line and stations. OSM/OSRM does not provide public-transit itineraries, so it remains
+  limited to supported street geometry rather than being misrepresented as an MRT router. The UI
+  shows the supplied service/exit data but keeps the journey in demo mode and presents bus time and
+  stop counts as estimates.
 - **Route detail view (GMaps-style)**: computed board/alight clock times and estimated stop counts
   are arithmetic on the one real number available (leg duration) presented the way a transit app
   conventionally shows a trip, not real schedule/stop data (this app has no data source for either).

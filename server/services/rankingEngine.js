@@ -52,6 +52,10 @@ function markAffectedLegs(route, disruptions) {
   })
 }
 
+export function routeIsAffected(route, disruptions) {
+  return markAffectedLegs(route, disruptions).some((leg) => leg.affected)
+}
+
 // Weights differ by Arjun's own stated urgency for *this* trip, not a
 // different persona — "I have time to spare" leans on comfort/crowding,
 // "I need to get there fast" leans on raw time.

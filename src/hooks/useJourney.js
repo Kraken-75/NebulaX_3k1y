@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react'
 import { getJourney } from '../lib/api'
 
-function cacheKey(fromId, toId) {
-  return `nebulax:lastJourney:${fromId}:${toId}`
+function cacheKey(urgency, fromId, toId) {
+  return `nebulax:lastJourney:${urgency}:${fromId}:${toId}`
 }
 
-function readCache(fromId, toId) {
+function readCache(urgency, fromId, toId) {
   try {
-    const raw = localStorage.getItem(cacheKey(fromId, toId))
+    const raw = localStorage.getItem(cacheKey(urgency, fromId, toId))
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
   }
 }
 
-function writeCache(fromId, toId, data) {
+function writeCache(urgency, fromId, toId, data) {
   try {
-    localStorage.setItem(cacheKey(fromId, toId), JSON.stringify(data))
+    localStorage.setItem(cacheKey(urgency, fromId, toId), JSON.stringify(data))
   } catch {
     // Storage can be unavailable (private browsing, quota) — caching is a
     // convenience, never something the app depends on to function.
@@ -27,7 +27,7 @@ function writeCache(fromId, toId, data) {
 // back to the last successful response for this exact from/to pair instead
 // of showing a dead screen or a stale trip for a different pair.
 export function useJourney(urgency, fromId, toId) {
-  const [data, setData] = useState(() => (fromId && toId ? readCache(fromId, toId) : null))
+  const [data, setData] = useState(() => (fromId && toId ? readCache(urgency, fromId, toId) : null))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [usingCache, setUsingCache] = useState(false)
@@ -45,11 +45,11 @@ export function useJourney(urgency, fromId, toId) {
         setData(fresh)
         setUsingCache(false)
         setError('')
-        writeCache(fromId, toId, fresh)
+        writeCache(urgency, fromId, toId, fresh)
       })
       .catch(() => {
         if (cancelled) return
-        const cached = readCache(fromId, toId)
+        const cached = readCache(urgency, fromId, toId)
         if (cached) {
           setData(cached)
           setUsingCache(true)

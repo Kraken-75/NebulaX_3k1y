@@ -111,10 +111,16 @@ function RouteDetailSheet({ route, from, to, onClose, onChoose, choosing }) {
                   <span>{leg.line}</span>
                   {leg.affected && <span className="status-chip affected">Affected</span>}
                 </div>
+                {leg.mode === 'bus' && leg.boardingExit && (
+                  <p className="timeline-meta">
+                    Use station exit {leg.boardingExit} · Services {leg.services.join(', ')}
+                  </p>
+                )}
                 <p className="timeline-meta">
                   {(() => {
                     const stops = leg.estimatedStops ?? estimateStops(leg.minutes)
-                    return `Ride ~${stops} stop${stops > 1 ? 's' : ''} (${leg.minutes} min)`
+                    const transferNote = leg.transferMinutes ? `, incl. ~${leg.transferMinutes} min transfer/wait` : ''
+                    return `Ride ~${stops} stop${stops > 1 ? 's' : ''} (${leg.minutes} min${transferNote})`
                   })()}
                 </p>
                 <div className="timeline-row timeline-row-alight">
