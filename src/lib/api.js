@@ -1,6 +1,7 @@
 // The ONLY module in the frontend allowed to call an HTTP endpoint. It only
 // ever talks to our own backend (/api/*) — never LTA, OneMap or any other
 // external service directly, since those need a secret key.
+import { getStaticDemoJourney } from './staticJourney'
 
 async function request(path, options) {
   const response = await fetch(path, options)
@@ -12,7 +13,11 @@ async function request(path, options) {
 
 export function getJourney(urgency, { fromId, toId }) {
   const params = new URLSearchParams({ urgency, fromId, toId })
-  return request(`/api/journey?${params.toString()}`)
+  return request(`/api/journey?${params.toString()}`).catch((error) => {
+    const fallback = getStaticDemoJourney(urgency, { fromId, toId })
+    if (fallback) return fallback
+    throw error
+  })
 }
 
 export function getStations() {

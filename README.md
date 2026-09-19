@@ -1,116 +1,74 @@
-# NebulaX — Smart Commuter Companion
+# LTABuddy — Smart Commuter Companion
 
-Built for **NEBULA X** (LTA / Google Cloud / SMRT / SBS Transit / CRRC, NUS-hosted), Problem
-Statement 2. A mobile-first web app that gives one commuter — **Arjun**, a flexible Punggol →
-one-north commuter who values comfort and predictability over raw speed — proactive, door-to-door
-route advice: a plain single-route view day to day, a phone-style notification the moment a
-disruption hits, and (unlike Google Maps, Citymapper or MyTransport) a real bridging-bus option and
-a scaled reward for choosing a less-crowded alternative when it helps spread load off the busiest
-route.
+LTABuddy is a mobile-first commuter app for Arjun, a flexible Punggol → one-north commuter who values a predictable, less-crowded journey when he has time to spare.
 
-See [`docs/WRITEUP.md`](docs/WRITEUP.md) for the persona rationale, architecture, assumptions,
-limitations and measurement methodology. See `docs/AUDIT*.md` (v1 through v6) and
-[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) for how this build decided what to keep across each
-revision and the order it was built in.
+## Submission demo
 
-> **Picking this repo back up — human or AI agent (Claude Code, Codex, etc.):** this app is near
-> demo-ready after six rounds of real feedback and fixes. Read [`AGENTS.md`](AGENTS.md) first — it
-> has the full context, the design conventions to preserve, the real branch to work on
-> (`feature/ps2-complete-build`, not `main`), and explicit instructions not to restart or discard
-> the progress already made.
+Demo recording: **[Recording link to be added]**
 
-## Quick start (zero setup friction, zero API keys required)
+Try **Punggol → one-north**, trigger the disruption demo, tap the notification, and compare the fast route with the bus-assisted alternatives and incentives.
+
+## Prerequisites
+
+- Node.js 20 or newer
+- npm 10 or newer
+- A modern browser
+
+No API key is required for the reproducible demo.
+
+## Install and run
 
 ```bash
 npm install
 npm run dev
 ```
 
-This starts the frontend (Vite, port 5173) and backend (Express, port 3001) together. Open
-**http://localhost:5173**.
+Open http://localhost:5173. Vite serves the React frontend and Express runs on port 3001.
 
-With no `.env` file at all, every data source (routing, crowding, disruptions, weather) falls back
-to clearly labeled demo/mock data — you'll see a **DEMO MODE** badge wherever that's happening.
-The app is fully inspectable and demoable with nothing configured.
-
-## Adding real data (optional)
-
-Copy `.env.example` to `.env` and fill in what you have:
-
-- **`LTA_ACCOUNT_KEY`** — free registration at [datamall.lta.gov.sg](https://datamall.lta.gov.sg/).
-  Enables live `TrainServiceAlerts`, `PCDRealTime` crowding, `RoadWorks`, `PlannedBusRoutes`.
-- **`ONEMAP_EMAIL` / `ONEMAP_PASSWORD`** — free account at
-  [onemap.gov.sg/apidocs/register](https://www.onemap.gov.sg/apidocs/register). Primary
-  multi-modal routing engine (official SG government geospatial infrastructure).
-- **`MAPTILER_KEY`** / **`STADIA_API_KEY`** — only needed beyond local/demo use; see
-  [Map tiles](#map-tiles) below.
-
-Nothing here is required to run or demo the app — see `server/env.js` and `server/services/*` for
-exactly how each integration degrades when its key is missing.
-
-## Demoing a disruption reliably
-
-Live disruption feeds are "quiet normally" — a real MRT fault won't reliably occur at the moment
-you want to record a demo. On first run, search and pick a home and work station. On **Home**, the
-From/To fields default to Punggol → one-north (Arjun's persona, and the only pair with the full
-hand-crafted disruption scenario — any other pair still produces a route, just a generically
-mocked one). Expand **"Simulate a disruption (for demo)"** and press **Trigger disruption** for a
-deterministic, reproducible scenario, picked at random from 3 (never the one already showing, so
-repeated triggers always visibly change something): a North East Line fault between Sengkang and
-Dhoby Ghaut, an East West Line fault between Clementi and Redhill, or a North South Line fault
-between Orchard and Raffles Place. Only the North East Line scenario touches Arjun's own
-Punggol → one-north corridor — when it's active, a bridging bus service is declared, a phone-style
-notification drops in from the top of the screen (tap it to reveal the ranked 3-route comparison
-including the bridging bus as a real candidate, each alternative scaled to its own reward), plus a
-"Community updates" feed styled on the SGMRT Telegram channel (entirely synthetic, generated
-locally). The other two scenarios still show the notification, correctly telling Arjun it doesn't
-affect his trip — pick a From/To pair that actually crosses the affected line (e.g. Orchard →
-Raffles Place) to see that scenario's own route impact instead. Press **Reset** to clear it. This
-state is in-memory on the backend and resets when the server restarts.
-
-## Map tiles
-
-The map uses the public OpenStreetMap tile server (`tile.openstreetmap.org`) by default, which is
-fine for local development and this hackathon demo, but its usage policy forbids sustained
-production traffic. For anything beyond a demo recording, set `MAPTILER_KEY` or `STADIA_API_KEY`
-and point `src/components/MapView.jsx`'s `TileLayer` `url`/`attribution` at that provider instead.
-"© OpenStreetMap contributors" attribution is required and always shown regardless of tile source.
-
-## Project structure
-
-```
-server/            Express backend — the only place secrets or external API calls live
-  services/        LTA DataMall, OneMap, OSRM, BusArrival, data.gov.sg clients, the mock route
-                    generator, incentive tiering (each external-API client degrades to a
-                    labeled mock on failure)
-  routes/          /api/journey, /api/disruptions, /api/crowding, /api/weather, /api/incentives,
-                    /api/demo, /api/stations
-  data/            Labeled mock fixtures used when a live source is unavailable (Arjun's
-                    hand-crafted corridor + bridging-bus route, disruptions, crowding, weather,
-                    the mock Telegram feed, the ~49-station directory, voucher tiers)
-  state/           In-memory demo-disruption toggle and mocked incentive ledger
-src/               React frontend — only ever calls our own /api/* endpoints (src/lib/api.js)
-  pages/           Signup, Home (route planner + disruption flow), Rewards, Settings
-  components/      MapView, RouteCard, UrgencyToggle, BottomNav, DemoModeBadge,
-                    DisruptionNotification, CommunityUpdatesFeed, StationSearchInput
-  hooks/           useJourney (fetch + offline cache), useOnlineStatus, useLiveLocation,
-                    useHomeWork, useStations, useDarkMode
+```bash
+npm run dev:web   # frontend only
+npm run dev:api   # backend only
+npm run build     # production frontend build
+npm run lint      # lint frontend and backend
 ```
 
-## Scripts
+## Configuration
 
-- `npm run dev` — frontend + backend together (recommended)
-- `npm run dev:web` / `npm run dev:api` — run either alone
-- `npm run build` — production frontend build
-- `npm run lint` — ESLint across frontend and backend
+Copy `.env.example` to `.env` only if you want optional live services. Never commit `.env` or credentials.
 
-## Known limitations
+- `LTA_ACCOUNT_KEY`: free LTA DataMall key for alerts and crowding.
+- `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`: optional OneMap account.
+- `MAPTILER_KEY` or `STADIA_API_KEY`: optional production map tiles.
 
-See [`docs/WRITEUP.md`](docs/WRITEUP.md#limitations) for the full list — notably: OneMap
-multi-modal routing has a real client implemented but isn't wired into `/api/journey` yet; any
-from/to pair now produces a route (its train option a real shortest path across the real
-interchange network, even across multiple changes), but only Punggol → one-north has the
-hand-crafted disruption scenario and a bus option with any real data behind it — every other pair's
-bus route is honestly labeled simulated, since no live LTA DataMall key is configured in this
-environment; dark mode doesn't re-theme the map tiles; and mobile testing was done via viewport
-emulation, not a physical device, in this build environment.
+With no keys, the app uses clearly labeled mock/demo fixtures so judges can reproduce it without registering for paid services.
+
+## What to click
+
+1. Choose **Punggol** as home and **one-north** as work/school.
+2. On Home, expand **Simulate a disruption (for demo)** and trigger it.
+3. Tap the disruption notification.
+4. Compare **I need to get there fast** with **I have time to spare**. The latter uses supplied bus alternatives to reach an unaffected MRT station, then continues by rail where possible.
+5. Open a route for its detailed timeline, or visit Rewards.
+
+The app remembers the selected commute and route state across Home, Rewards, and Settings. The Punggol → one-north journey is the fully scripted scenario; other station pairs use clearly labeled generic mock routing.
+
+## Firebase Hosting
+
+```bash
+npm run build
+npx firebase-tools deploy --only hosting
+```
+
+Firebase Hosting does not execute Express. The frontend therefore includes a labeled static fallback for the default Punggol → one-north journey when `/api/journey` is unavailable. For full live API behavior, deploy `server/` separately with Cloud Run or Firebase Functions and configure the frontend API endpoint.
+
+## Repository layout
+
+```text
+src/                 React frontend, pages, components, hooks, and API boundary
+server/              Express API, routing logic, live clients, and fixtures
+server/data/         Station directory, disruptions, and bus alternatives
+docs/WRITEUP.md      Detailed persona, architecture, and limitations
+.env.example         Environment variable names only
+```
+
+See [`WRITEUP.md`](WRITEUP.md) for the full submission write-up. Every unavailable external source is marked as mock/demo data.
