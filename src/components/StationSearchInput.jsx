@@ -20,7 +20,7 @@ function StationSearchInput({ label, value, onSelect, stations, placeholder }) {
 
   const matches =
     query.trim().length === 0
-      ? stations.slice(0, 6)
+      ? stations
       : stations.filter((station) => station.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
 
   return (
@@ -32,7 +32,10 @@ function StationSearchInput({ label, value, onSelect, stations, placeholder }) {
         value={query}
         placeholder={placeholder}
         onChange={(event) => {
-          setQuery(event.target.value)
+          const nextQuery = event.target.value
+          const exactMatch = stations.find((station) => station.name.toLowerCase() === nextQuery.trim().toLowerCase())
+          setQuery(nextQuery)
+          if (exactMatch) onSelect(exactMatch)
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
