@@ -2,6 +2,9 @@
 
 LTABuddy is a mobile-first commuter app for Arjun, a flexible Punggol → one-north commuter who values a predictable, less-crowded journey when he has time to spare.
 
+## How to test the app's reaction to a unplanned interuption
+LTABuddy's demo app has a "Simulate a disruption(for demo)" drop down at the bottom of the homepage for user to receive a notification for unplanned disruptions. User can click trigger disruption until a random disruption lands in his desired travel path to test the LTABuddy's detour/alternate route proposals. Upon clicking the notification, he will get a chance to see the new alternate routes proposed.
+
 ## Submission demo
 
 Demo recording: **[Recording link to be added]**
