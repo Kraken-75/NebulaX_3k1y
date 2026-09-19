@@ -180,6 +180,10 @@
 
 /* --- Map --- */
 .map-shell {
+  /* Leaflet's panes (z-index 400-700) and controls (1000) would otherwise
+     join the page's root stacking context and paint over the fixed bottom
+     nav when the map scrolls beneath it. Isolating contains them here. */
+  isolation: isolate;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--border);
