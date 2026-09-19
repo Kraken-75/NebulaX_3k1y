@@ -1,11 +1,12 @@
 import { Router } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
-import { rankRoutes } from '../services/rankingEngine.js'
+import { rankRoutes, routeIsAffected } from '../services/rankingEngine.js'
 import { getPlatformCrowding, getTrainServiceAlerts } from '../services/ltaClient.js'
 import { getWeather } from '../services/weatherClient.js'
 import { getWalkCycleRoute } from '../services/osrmClient.js'
 import { getRealBusLoad, getMockLiveBusCrowding } from '../services/busArrivalClient.js'
 import { generateGenericRoutes } from '../services/mockRouteGenerator.js'
+import { generateHybridBusRailRoutes } from '../services/busAlternativeRouter.js'
 import { MOCK_JOURNEYS, BRIDGING_BUS_ROUTE } from '../data/mockJourneys.js'
 import { STATION_DIRECTORY } from '../data/stationDirectory.js'
 import { MOCK_CROWDING, DEMO_TRIGGER_CROWDING } from '../data/mockCrowding.js'
@@ -105,9 +106,35 @@ router.get(
       (alert) => alert.status === 'Disruption' && alert.bridgingBusDeclared && alert.line === 'North East Line',
     )
 
-    const journeyData = await getJourneys(fromId, toId, { includeBridgingBus: nelBridgingBusDeclared })
+    // The dedicated shuttle is an operational fastest-path response, not a
+    // comfort/load-spreading option. Keeping it out of the chill candidate
+    // pool prevents the same shuttle recommendation from appearing under
+    // both choices and from incorrectly receiving an incentive there.
+    const includeBridgingBus = nelBridgingBusDeclared && urgency === 'rushing'
+    const journeyData = await getJourneys(fromId, toId, { includeBridgingBus })
 
-    if (nelBridgingBusDeclared && journeyData.isArjunCorridor) {
+    if (urgency === 'chill') {
+      const affectedRoutes = journeyData.routes.filter((route) => routeIsAffected(route, disruptions))
+      const bestAffectedRoute = [...affectedRoutes].sort((a, b) => a.totalMinutes - b.totalMinutes)[0]
+      const busAlternatives = bestAffectedRoute
+        ? generateHybridBusRailRoutes({
+            baselineRoute: bestAffectedRoute,
+            disruptions,
+            to: findStation(toId),
+            limit: 4,
+          })
+        : []
+
+      // Keep one affected baseline so the comparison explains what is being
+      // avoided, then let the normal ranking weights choose the best two bus
+      // alternatives. If the supplied graph has no path for this pair, keep
+      // the established route set rather than fabricating a connection.
+      if (bestAffectedRoute && busAlternatives.length > 0) {
+        journeyData.routes = await Promise.all([bestAffectedRoute, ...busAlternatives].map(withGeometry))
+      }
+    }
+
+    if (includeBridgingBus && journeyData.isArjunCorridor) {
       // Priority 1: real v3/BusArrival Load field — will only succeed with
       // a real LTA key AND a real bus stop/service code, neither of which
       // exists for a temporary bridging service, so this realistically

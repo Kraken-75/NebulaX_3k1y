@@ -12,6 +12,8 @@ function App() {
   const [activePage, setActivePage] = useState('home')
   const [urgency, setUrgency] = useState(() => localStorage.getItem('nebulax:urgency') || 'chill')
   const { homeWork, save: saveHomeWork } = useHomeWork()
+  const [currentJourney, setCurrentJourney] = useState(null)
+  const [acknowledgedDisruptionKey, setAcknowledgedDisruptionKey] = useState(null)
   // Lifted here (not just inside SettingsPage) so the saved theme applies
   // immediately on load regardless of which tab is active first.
   const [isDark, setIsDark] = useDarkMode()
@@ -26,8 +28,20 @@ function App() {
   }
 
   if (!homeWork) {
-    return <SignupPage onComplete={saveHomeWork} />
+    return (
+      <SignupPage
+        onComplete={(selection) => {
+          saveHomeWork(selection)
+          setCurrentJourney({ from: selection.home, to: selection.work })
+        }}
+      />
+    )
   }
+
+  // Seed the active journey once per app boot. Keeping it here rather than
+  // inside HomePage means changing tabs cannot reset the user's current
+  // From/To selection when HomePage unmounts and mounts again.
+  const journey = currentJourney || { from: homeWork.home, to: homeWork.work }
 
   return (
     <div className="app-shell">
@@ -43,7 +57,18 @@ function App() {
 
       <main className="content">
         {activePage === 'home' && (
-          <HomePage urgency={urgency} onUrgencyChange={handleUrgencyChange} homeWork={homeWork} />
+          <HomePage
+            urgency={urgency}
+            onUrgencyChange={handleUrgencyChange}
+            from={journey.from}
+            to={journey.to}
+            acknowledgedDisruptionKey={acknowledgedDisruptionKey}
+            onAcknowledgeDisruption={setAcknowledgedDisruptionKey}
+            onClearDisruptionAcknowledgement={() => setAcknowledgedDisruptionKey(null)}
+            onFromChange={(from) => setCurrentJourney({ from, to: journey.to })}
+            onToChange={(to) => setCurrentJourney({ from: journey.from, to })}
+            onSwap={() => setCurrentJourney({ from: journey.to, to: journey.from })}
+          />
         )}
         {activePage === 'rewards' && <RewardsPage />}
         {activePage === 'settings' && (

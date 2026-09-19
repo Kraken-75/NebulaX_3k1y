@@ -64,10 +64,21 @@ function legTimeMinutes(distanceKm) {
 // shorter 2-transfer route entirely whenever a (longer) 1-transfer path
 // also happens to exist, since it would only ever look for a single
 // common interchange, never a chain of them.
-function shortestPath(from, to) {
+function shortestPath(from, to, { excludedStationNames = [], excludedLines = [] } = {}) {
   if (from.id === to.id) return [from]
 
-  const nodes = [from, to, ...INTERCHANGES.filter((station) => station.id !== from.id && station.id !== to.id)]
+  const excludedNames = new Set(excludedStationNames.map((name) => name.toLowerCase()))
+  const excludedLineSet = new Set(excludedLines)
+  const nodes = [
+    from,
+    to,
+    ...INTERCHANGES.filter(
+      (station) =>
+        station.id !== from.id &&
+        station.id !== to.id &&
+        !excludedNames.has(station.name.toLowerCase()),
+    ),
+  ]
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const dist = new Map(nodes.map((node) => [node.id, Infinity]))
   const prev = new Map()
@@ -89,7 +100,7 @@ function shortestPath(from, to) {
     const current = byId.get(currentId)
     for (const id of unvisited) {
       const line = sharedLine(current, byId.get(id))
-      if (!line) continue
+      if (!line || excludedLineSet.has(line)) continue
       const alt = currentDist + legTimeMinutes(haversineKm(current, byId.get(id)))
       if (alt < dist.get(id)) {
         dist.set(id, alt)
@@ -120,9 +131,10 @@ function midpoint(a, b) {
 // geometric-midpoint transfer only if no path exists at all through the
 // directory's tagged interchanges (shouldn't happen for a real SG pair,
 // but a data gap should degrade gracefully rather than crash).
-function transitLegs(from, to) {
-  const path = shortestPath(from, to)
+function transitLegs(from, to, options = {}) {
+  const path = shortestPath(from, to, options)
   if (!path) {
+    if (options.excludedStationNames?.length || options.excludedLines?.length) return null
     const transfer = midpoint(from, to)
     const distanceKm = haversineKm(from, to)
     const half = legTimeMinutes(distanceKm / 2)
@@ -147,6 +159,10 @@ function transitLegs(from, to) {
     })
   }
   return legs
+}
+
+export function generateTrainLegs(from, to, options = {}) {
+  return transitLegs(from, to, options)
 }
 
 // Every walk leg here stays comfortably under the 10-minute cap by

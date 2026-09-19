@@ -13,33 +13,33 @@ import { useLiveLocation } from '../hooks/useLiveLocation'
 import { useStations } from '../hooks/useStations'
 import { redeemIncentive, triggerDemoDisruption, resetDemoDisruption } from '../lib/api'
 
-// Everyday mode shows one plain, Gmaps-style route. A disruption notification
+// Everyday mode shows one plain, Gmaps-style route. The urgency choice only
+// becomes relevant when the selected journey is actually disrupted, so it
+// stays hidden for normal trips and unrelated network incidents. A notification
 // fires for ANY active disruption, whether or not it touches the current
 // trip — tapping it opens the app to whatever's relevant (the 3-route
 // comparison if affected, otherwise just the usual route). Every route,
 // single or one of several, is a compact preview until tapped, at which
 // point its full step-by-step detail opens (RouteDetailSheet) — matching
 // how GMaps itself works, not a custom pattern.
-function HomePage({ urgency, onUrgencyChange, homeWork }) {
+function HomePage({
+  urgency,
+  onUrgencyChange,
+  from,
+  to,
+  acknowledgedDisruptionKey,
+  onAcknowledgeDisruption,
+  onClearDisruptionAcknowledgement,
+  onFromChange,
+  onToChange,
+  onSwap,
+}) {
   const { stations, loading: stationsLoading } = useStations()
   const liveLocation = useLiveLocation()
   const isOnline = useOnlineStatus()
 
-  const [from, setFrom] = useState(null)
-  const [to, setTo] = useState(null)
-  const [routeInitialized, setRouteInitialized] = useState(false)
-
-  // Defaults to the commuter's saved home -> work trip. Both fields stay
-  // fully editable afterward; this only seeds them once.
-  if (!routeInitialized && stations.length > 0) {
-    setRouteInitialized(true)
-    setFrom(homeWork.home)
-    setTo(homeWork.work)
-  }
-
   const { data, loading, error, usingCache, reload } = useJourney(urgency, from?.id, to?.id)
 
-  const [revealed, setRevealed] = useState(false)
   const [lastDisruptionActive, setLastDisruptionActive] = useState(false)
   const [confirmedRouteId, setConfirmedRouteId] = useState(null)
   const [expandedRouteId, setExpandedRouteId] = useState(null)
@@ -55,13 +55,14 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
   const disruptionActive = Boolean(
     data?.demoTriggered || (data?.disruptions || []).some((alert) => alert.status === 'Disruption'),
   )
+  const disruptionKey = data?.disruptions?.find((alert) => alert.status === 'Disruption')?.id || null
+  const disruptionAcknowledged = Boolean(disruptionKey && acknowledgedDisruptionKey === disruptionKey)
 
   // Reset "revealed"/"confirmed" the moment a disruption starts or clears —
   // adjusted during render rather than in an effect, per React's own
   // guidance for state that depends on a derived value.
   if (disruptionActive !== lastDisruptionActive) {
     setLastDisruptionActive(disruptionActive)
-    setRevealed(false)
     setConfirmedRouteId(null)
     setExpandedRouteId(null)
   }
@@ -69,7 +70,13 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
   const topRoute = routes[0]
   const confirmedRoute = routes.find((route) => route.id === confirmedRouteId)
   const expandedRoute = routes.find((route) => route.id === expandedRouteId)
-  const displayedRoutes = confirmedRoute ? [confirmedRoute] : hasDisruption && revealed ? routes : topRoute ? [topRoute] : []
+  const displayedRoutes = confirmedRoute
+    ? [confirmedRoute]
+    : hasDisruption && disruptionAcknowledged
+      ? routes
+      : topRoute
+        ? [topRoute]
+        : []
   const focusedRouteId = confirmedRoute?.id ?? expandedRoute?.id ?? topRoute?.id
 
   async function handleChooseRoute(route) {
@@ -95,6 +102,7 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
     setDemoBusy(true)
     try {
       await triggerDemoDisruption()
+      onClearDisruptionAcknowledgement()
       reload()
     } finally {
       setDemoBusy(false)
@@ -105,6 +113,7 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
     setDemoBusy(true)
     try {
       await resetDemoDisruption()
+      onClearDisruptionAcknowledgement()
       reload()
     } finally {
       setDemoBusy(false)
@@ -128,23 +137,19 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
 
   return (
     <section className="page home-page">
-      <UrgencyToggle urgency={urgency} onChange={onUrgencyChange} />
+      {hasDisruption && <UrgencyToggle urgency={urgency} onChange={onUrgencyChange} />}
 
       <div className="from-to-panel">
-        <StationSearchInput label="From" value={from} onSelect={setFrom} stations={stations} placeholder="Choose a station" />
+        <StationSearchInput label="From" value={from} onSelect={onFromChange} stations={stations} placeholder="Choose a station" />
         <button
           type="button"
           className="swap-button"
           aria-label="Swap from and to"
-          onClick={() => {
-            const previousFrom = from
-            setFrom(to)
-            setTo(previousFrom)
-          }}
+          onClick={onSwap}
         >
           ⇅
         </button>
-        <StationSearchInput label="To" value={to} onSelect={setTo} stations={stations} placeholder="Choose a station" />
+        <StationSearchInput label="To" value={to} onSelect={onToChange} stations={stations} placeholder="Choose a station" />
       </div>
 
       {data?.demoMode && <DemoModeBadge triggered={data.demoTriggered} />}
@@ -156,12 +161,12 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
       {loading && !data && <p className="loading-line">Finding your route…</p>}
       {error && <p className="error-line">{error}</p>}
 
-      {disruptionActive && !revealed && notificationText && (
+      {disruptionActive && !disruptionAcknowledged && notificationText && (
         <DisruptionNotification
           headline={notificationText.headline}
           affectsYou={notificationText.affectsYou}
           topActionLabel={notificationText.topActionLabel}
-          onTap={() => setRevealed(true)}
+          onTap={() => onAcknowledgeDisruption(disruptionKey)}
         />
       )}
 
@@ -191,7 +196,9 @@ function HomePage({ urgency, onUrgencyChange, homeWork }) {
 
           {confirmation && <p className="confirmation-line">{confirmation}</p>}
 
-          {revealed && hasDisruption && !confirmedRoute && <CommunityUpdatesFeed updates={data?.communityUpdates} />}
+          {disruptionAcknowledged && hasDisruption && !confirmedRoute && (
+            <CommunityUpdatesFeed updates={data?.communityUpdates} />
+          )}
         </>
       )}
 
