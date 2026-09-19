@@ -61,6 +61,20 @@ npx firebase-tools deploy --only hosting
 
 Firebase Hosting does not execute Express. The frontend therefore includes a labeled static fallback for the default Punggol → one-north journey when `/api/journey` is unavailable. For full live API behavior, deploy `server/` separately with Cloud Run or Firebase Functions and configure the frontend API endpoint.
 
+### Deploy the API with Cloud Run
+
+The repository includes a `Dockerfile` for the Express API. After installing the Google Cloud CLI and authenticating, run:
+
+```bash
+gcloud auth login
+gcloud config set project nebulax-5ede7
+gcloud run deploy nebulax-api --source . --region asia-southeast1 --allow-unauthenticated
+npm run build
+npx firebase-tools deploy --only hosting
+```
+
+The `/api/**` Firebase rewrite sends API calls to the `nebulax-api` Cloud Run service; the second rewrite continues to serve the React SPA. Set optional backend secrets with Cloud Run environment variables, never in Git.
+
 ## Repository layout
 
 ```text

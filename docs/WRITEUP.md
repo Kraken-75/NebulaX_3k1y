@@ -1,8 +1,8 @@
-# NebulaX — Smart Commuter Companion
+# LTABuddy — Smart Commuter Companion
 
 ## Persona and problem
 
-NebulaX is built for Arjun, a flexible commuter travelling from Punggol to one-north. He prefers a predictable, less-crowded journey when he has time, but needs a clear fast option when disruption makes time important.
+LTABuddy is built for Arjun, a flexible commuter travelling from Punggol to one-north. He prefers a predictable, less-crowded journey when he has time, but needs a clear fast option when disruption makes time important.
 
 The app makes disruption trade-offs explicit: it surfaces a fast operational shuttle option and rewards voluntary load spreading through viable alternatives.
 

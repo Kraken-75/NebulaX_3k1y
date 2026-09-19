@@ -27,6 +27,6 @@ app.use('/api/stations', stationsRouter)
 app.use(notFoundHandler)
 app.use(errorHandler)
 
-app.listen(env.port, () => {
-  console.log(`NebulaX API listening on http://localhost:${env.port}`)
+app.listen(env.port, '0.0.0.0', () => {
+  console.log(`NebulaX API listening on port ${env.port}`)
 })
